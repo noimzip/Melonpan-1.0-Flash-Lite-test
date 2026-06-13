@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Markdown超入門スライド</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap"
+    rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', 'Noto Sans JP', sans-serif;
+      background: #1a1a2e;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    .slide-wrapper {
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    .slide-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .ctrl-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .ctrl-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .ctrl-btn:disabled {
+      opacity: 0.3;
+      cursor: default;
+    }
+
+    .slide-counter {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 14px;
+      font-weight: 500;
+      min-width: 80px;
+      text-align: center;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      margin-top: 14px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: #84B59F;
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+
+    /* フルスクリーン時 */
+    .slide-wrapper:fullscreen,
+    .slide-wrapper:-webkit-full-screen,
+    .slide-wrapper:-moz-full-screen {
+      background: #0d0d1a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100vw;
+      height: 100vh;
+      max-width: none;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .slide-wrapper:fullscreen .slide-container,
+    .slide-wrapper:-webkit-full-screen .slide-container,
+    .slide-wrapper:-moz-full-screen .slide-container {
+      max-height: calc(100vh - 120px);
+      border-radius: 12px;
+    }
+
+    #btn-fullscreen.active {
+      background: rgba(132, 181, 159, 0.25);
+      border-color: rgba(132, 181, 159, 0.5);
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="slide-wrapper">
+    <!-- スライド表示エリア -->
+    <div class="slide-container" id="slide-viewport">
+      <!-- スライドがここにレンダリングされます -->
+    </div>
+
+    <!-- プログレスバー -->
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+
+    <!-- コントロール -->
+    <div class="controls">
+      <button class="ctrl-btn" onclick="prevSlide()" id="btn-prev" disabled>
+        <i data-lucide="chevron-left" style="width:20px;height:20px;"></i>
+      </button>
+      <span class="slide-counter" id="slide-counter">1 / 12</span>
+      <button class="ctrl-btn" onclick="nextSlide()" id="btn-next">
+        <i data-lucide="chevron-right" style="width:20px;height:20px;"></i>
+      </button>
+      <button class="ctrl-btn" onclick="toggleFullscreen()" id="btn-fullscreen" title="フルスクリーン (F)">
+        <i data-lucide="maximize" style="width:18px;height:18px;" id="fullscreen-icon"></i>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const slideData = [
+      {
+        id: 1,
+        title: "タイトル",
+        master: "DARK",
+        html: `
+          <div class="absolute inset-0 bg-[#2D3748] p-12 flex flex-col justify-between text-[#F7F9F6]">
+            <div class="flex items-center space-x-2">
+              <span class="h-2 w-8 bg-[#84B59F] rounded-full"></span>
+              <span class="text-sm font-semibold tracking-wider text-[#84B59F]">MARKDOWN ULTRA-GUIDE</span>
+            </div>
+            <div class="my-auto space-y-4">
+              <h1 class="text-4xl md:text-5xl font-extrabold leading-tight text-white">
+                右も左もわからない人のための<br>
+                <span class="text-[#84B59F]">Markdown（マークダウン）</span>超入門
+              </h1>
+              <p class="text-lg md:text-xl text-[#F7F9F6]/80 font-light">
+                資料作成が劇的に速く、美しくなる魔法の書き方
+              </p>
+            </div>
+            <div class="flex justify-between items-center border-t border-[#F7F9F6]/20 pt-4 text-xs text-[#F7F9F6]/50">
+              <span>FOR BEGINNERS</span>
+              <span>Created by Melonpan-1.0-Flash-Lite (<a href="https://gemini.google.com/share/9690f2d2b554">https://gemini.google.com/share/9690f2d2b554</a>)</span>
+            </div>
+          </div>
+        `
+      },
+      {
+        id: 2,
+        title: "導入: なぜMarkdownを使うのか？",
+        master: "LIGHT",
+        html: `
+          <div class="absolute inset-0 bg-[#F7F9F6] p-10 flex flex-col justify-between text-[#2D3748]">
+            <div>
+              <h2 class="text-2xl font-bold border-l-4 border-[#84B59F] pl-3 text-[#2D3748]">導入: なぜMarkdownを使うのか？</h2>
+              <p class="text-sm text-gray-500 mt-1 pl-4">資料作成の「面倒くさい」をすべて解決する魔法のツール</p>
+            </div>
+            <div class="grid grid-cols-3 gap-6 my-auto">
+              <div class="bg-white p-5 rounded-xl border border-[#E2E8F0] shadow-sm flex flex-col space-y-3">
+                <div class="w-10 h-10 rounded-full bg-[#84B59F]/20 flex items-center justify-center text-[#84B59F]">
+                  <i data-lucide="zap" class="w-5 h-5"></i>
+                </div>
+                <h3 class="font-bold text-[#2D3748] text-base">① 圧倒的に速い</h3>
+                <p class="text-xs text-gray-600 leading-relaxed">マウスでの太字や見出し設定は一切不要。キーボードから手を離さずに、爆速で執筆できます。</p>
+              </div>
+              <div class="bg-white p-5 rounded-xl border border-[#E2E8F0] shadow-sm flex flex-col space-y-3">
+                <div class="w-10 h-10 rounded-full bg-[#50808E]/20 flex items-center justify-center text-[#50808E]">
+                  <i data-lucide="palette" class="w-5 h-5"></i>
+                </div>
+                <h3 class="font-bold text-[#2D3748] text-base">② 誰が書いても綺麗</h3>
+                <p class="text-xs text-gray-600 leading-relaxed">手作業でのフォント調整がないため、デザインが崩れません。常に整った文書が完成します。</p>
+              </div>
+              <div class="bg-white p-5 rounded-xl border border-[#E2E8F0] shadow-sm flex flex-col space-y-3">
+                <div class="w-10 h-10 rounded-full bg-[#84B59F]/20 flex items-center justify-center text-[#84B59F]">
+                  <i data-lucide="globe" class="w-5 h-5"></i>
+                </div>
+                <h3 class="font-bold text-[#2D3748] text-base">③ どこでも万能</h3>
+                <p class="text-xs text-gray-600 leading-relaxed">Notion、Slack、Teams、社内Wiki（Confluenceなど）にそのまま貼り付けて、美しく即座に反映。</p>
+              </div>
+            </div>
+            <div class="text-xs text-right text-gray-400">Markdown超入門</div>
+          </div>
+        `
+      },
+      {
+        id: 3,
+        title: "最も重要なルール (落とし穴対策)",
+        master: "LIGHT",
+        html: `
+          <div class="absolute inset-0 bg-[#F7F9F6] p-10 flex flex-col justify-between text-[#2D3748]">
+            <div>
+              <h2 class="text-2xl font-bold border-l-4 border-[#B85042] pl-3 text-[#2D3748]">最も重要なルール (落とし穴対策)</h2>
+              <p class="text-sm text-gray-500 mt-1 pl-4">記法を学ぶ前に、これだけは絶対に忘れないでください</p>
+            </div>
+            <div class="my-auto max-w-3xl mx-auto w-full bg-white p-6 rounded-2xl border-2 border-[#B85042]/30 shadow-md flex flex-col items-center text-center space-y-4">
+              <div class="bg-[#B85042]/10 text-[#B85042] px-4 py-2 rounded-full font-bold text-sm tracking-wider flex items-center space-x-2">
+                <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                <span>絶対厳守の大前提</span>
+              </div>
+              <h3 class="text-3xl font-extrabold text-[#2D3748] leading-tight">
+                記号の直後には、必ず<br>
+                <span class="text-[#B85042] bg-[#B85042]/5 px-2 py-0.5 rounded">「半角スペース」</span>を入れる！
+              </h3>
+              <div class="grid grid-cols-2 gap-4 w-full pt-4">
+                <div class="bg-[#F7F9F6] p-4 rounded-xl border border-gray-200">
+                  <div class="text-xs font-semibold text-gray-400 uppercase">誤った例 (ただの文字になる)</div>
+                  <div class="text-xl font-mono text-red-600 font-bold mt-1">#見出しです</div>
+                </div>
+                <div class="bg-[#84B59F]/10 p-4 rounded-xl border border-[#84B59F]/30">
+                  <div class="text-xs font-semibold text-[#84B59F] uppercase">正しい例 (見出しとして認識)</div>
+                  <div class="text-xl font-mono text-green-700 font-bold mt-1">#<span class="bg-[#84B59F]/30 px-1.5 rounded animate-pulse text-[#2D3748]">␣</span>見出しです</div>
+                </div>
+              </div>
+            </div>
+            <div class="text-xs text-right text-gray-400">Markdown超入門</div>
+          </div>
+        `
+      },
+      {
+        id: 4,
+        title: "記法① 見出し (#)",
+        master: "LIGHT",
+        html: `
+          <div class="absolute inset-0 bg-[#F7F9F6] p-10 flex flex-col justify-between text-[#2D3748]">
+            <div>
+              <h2 class="text-2xl font-bold border-l-4 border-[#84B59F] pl-3 text-[#2D3748]">記法① 見出し (#)</h2>
+              <p class="text-sm text-gray-500 mt-1 pl-4">文章の「目次」となる骨組みを作りましょう</p>
+            </div>
+            <div class="grid grid-cols-2 gap-8 my-auto">
+              <div class="bg-slate-900 rounded-xl p-5 shadow-inner text-[#F7F9F6] font-mono flex flex-col justify-between min-h-[180px]">
+                <div class="text-xs text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-700 pb-1 flex items-center justify-between">
+                  <span>Markdown を書くとき</span>
+                  <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                </div>
+                <div class="space-y-2 text-sm md:text-base">
+                  <p class="text-[#84B59F]"># 1番大きな見出し</p>
+                  <p class="text-[#50808E]">## 2番目に大きな見出し</p>
+                  <p class="text-gray-400">### 3番目に大きな見出し</p>
+                </div>
+                <div class="text-2xs text-gray-500 mt-2">※ #の数が増えるほど、見出しは小さくなります</div>
+              </div>
+              <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-200 flex flex-col justify-between min-h-[180px]">
+                <div class="text-xs text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-100 pb-1 flex items-center justify-between">
+                  <span>実際の表示見本</span>
+                  <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                </div>
+                <div class="space-y-3">
+                  <h1 class="text-2xl font-extrabold text-[#2D3748]">1番大きな見出し</h1>
+                  <h2 class="text-lg font-bold text-[#50808E]">2番目に大きな見出し</h2>
+                  <h3 class="text-sm font-bold text-gray-600">3番目に大きな見出し</h3>
+                </div>
+                <div class="text-2xs text-red-600 font-semibold mt-2 flex items-center space-x-1">
+                  <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
+                  <span>注意：#の後の「半角スペース」がないと機能しません！</span>
+                </div>
+              </div>
+            </div>
+            <div class="text-xs text-right text-gray-400">Markdown超入門</div>
+          </div>
+        `
+      },
+      {
+        id: 5,
+        title: "記法② 箇条書き (-)",
+        master: "LIGHT",
+        html: `
+          <div class="absolute inset-0 bg-[#F7F9F6] p-10 flex flex-col justify-between text-[#2D3748]">
+            <div>
+              <h2 class="text-2xl font-bold border-l-4 border-[#84B59F] pl-3 text-[#2D3748]">記法② 箇条書き (-)</h2>
+              <p class="text-sm text-gray-500 mt-1 pl-4">複雑な情報をシンプルに整理する最良の手段</p>
+            </div>
+            <div class="grid grid-cols-2 gap-8 my-auto">
+              <div class="bg-slate-900 rounded-xl p-5 shadow-inner text-[#F7F9F6] font-mono flex flex-col justify-between min-h-[180px]">
+                <div class="text-xs text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-700 pb-1 flex items-center justify-between">
+                  <span>Markdown を書くとき</span>
+                  <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                </div>
+                <div class="space-y-1 text-sm md:text-base">
+                  <p class="text-[#84B59F]">- 打ち合わせ日程</p>
+                  <p class="text-[#84B59F]">&nbsp;&nbsp;- 6月20日（木） 15:00〜</p>
+                  <p class="text-[#84B59F]">&nbsp;&nbsp;- 場所：会議室A</p>
+                  <p class="text-[#84B59F]">- 参加メンバー</p>
+                </div>
+                <div class="text-2xs text-gray-500 mt-2">※ 行の先頭に半角スペース2つを入れると、1段下がります。</div>
+              </div>
+              <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-200 flex flex-col justify-between min-h-[180px]">
+                <div class="text-xs text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-100 pb-1 flex items-center justify-between">
+                  <span>実際の表示見本</span>
+                  <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                </div>
+                <div class="space-y-2 text-sm pl-4">
+                  <ul class="list-disc space-y-1 text-[#2D3748]">
+                    <li>打ち合わせ日程
+                      <ul class="list-circle pl-6 space-y-1 text-gray-600 text-xs">
+                        <li>6月20日（木） 15:00〜</li>
+                        <li>場所：会議室A</li>
+                      </ul>
+                    </li>
+                    <li>参加メンバー</li>
+                  </ul>
+                </div>
+                <div class="text-2xs text-[#50808E] font-medium mt-2">
+                  💡 箇条書きにすることで、読み手の負担を劇的に減らせます。
+                </div>
+              </div>
+            </div>
+            <div class="text-xs text-right text-gray-400">Markdown超入門</div>
+          </div>
+        `
+      },
+      {
+        id: 6,
+        title: "記法③ 太字 (**)",
+        master: "LIGHT",
+        html: `
+          <div class="absolute inset-0 bg-[#F7F9F6] p-10 flex flex-col justify-between text-[#2D3748]">
+            <div>
+              <h2 class="text-2xl font-bold border-l-4 border-[#84B59F] pl-3 text-[#2D3748]">記法③ 太字 (**)</h2>
+              <p class="text-sm text-gray-500 mt-1 pl-4">もっとも強調したい重要なキーワードを目立たせる</p>
+            </div>
+            <div class="grid grid-cols-2 gap-8 my-auto">
+              <div class="bg-slate-900 rounded-xl p-5 shadow-inner text-[#F7F9F6] font-mono flex flex-col justify-between min-h-[180px]">
+                <div class="text-xs text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-700 pb-1 flex items-center justify-between">
+                  <span>Markdown を書くとき</span>
+                  <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                </div>
+                <div class="space-y-3 text-sm md:text-base">
+                  <p>提出期限は<span class="text-[#84B59F]">**明日15時まで**</span>に厳守でお願いします。</p>
+                </div>
+                <div class="text-2xs text-gray-500 mt-2">※ 強調したい部分を、アスタリスク2個づつ（**）で挟みます。</div>
+              </div>
+              <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-200 flex flex-col justify-between min-h-[180px]">
+                <div class="text-xs text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-100 pb-1 flex items-center justify-between">
+                  <span>実際の表示見本</span>
+                  <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                </div>
+                <div class="space-y-3 text-sm leading-relaxed">
+                  <p class="text-[#2D3748]">提出期限は<strong class="font-extrabold text-[#B85042] bg-[#B85042]/5 px-1.5 py-0.5 rounded">明日15時まで</strong>に厳守でお願いします。</p>
+                </div>
+                <div class="text-2xs text-[#84B59F] font-semibold mt-2">
+                  💡 注意：強調（太字）を使いすぎると、逆に読みづらくなるので要点に絞りましょう。
+                </div>
+              </div>
+            </div>
+            <div class="text-xs text-right text-gray-400">Markdown超入門</div>
+          </div>
+        `
+      },
+      {
+        id: 7,
+        title: "記法④ リンク ([ ]())",
+        master: "LIGHT",
+        html: `
+          <div class="absolute inset-0 bg-[#F7F9F6] p-10 flex flex-col justify-between text-[#2D3748]">
+            <div>
+              <h2 class="text-2xl font-bold border-l-4 border-[#84B59F] pl-3 text-[#2D3748]">記法④ リンク ([ ]())</h2>
+              <p class="text-sm text-gray-500 mt-1 pl-4">長いURLをすっきりと整理し、見栄えの良い文章に</p>
+            </div>
+            <div class="grid grid-cols-2 gap-8 my-auto">
+              <div class="bg-slate-900 rounded-xl p-5 shadow-inner text-[#F7F9F6] font-mono flex flex-col justify-between min-h-[180px]">
+                <div class="text-xs text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-700 pb-1 flex items-center justify-between">
+                  <span>Markdown を書くとき</span>
+                  <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                </div>
+                <div class="space-y-3 text-sm md:text-base">
+                  <p>詳細なマニュアルは、<br><span class="text-[#84B59F]">[こちらの社内Wiki](https://example.com)</span>を確認してください。</p>
+                </div>
+                <div class="text-2xs text-gray-500 mt-2">※ [表示テキスト] と (URL) の順に並べて書きます。</div>
+              </div>
+              <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-200 flex flex-col justify-between min-h-[180px]">
+                <div class="text-xs text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-100 pb-1 flex items-center justify-between">
+                  <span>実際の表示見本</span>
+                  <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                </div>
+                <div class="space-y-3 text-sm leading-relaxed">
+                  <p class="text-[#2D3748]">詳細なマニュアルは、<a href="#" class="text-[#50808E] font-bold underline hover:text-[#2D3748]">こちらの社内Wiki</a>を確認してください。</p>
+                </div>
+                <div class="text-2xs text-[#50808E] font-semibold mt-2">
+                  💡 メリット：長いURLがそのままテキストに並ばないため、ドキュメントの視認性が大幅に向上します。
+                </div>
+              </div>
+            </div>
+            <div class="text-xs text-right text-gray-400">Markdown超入門</div>
+          </div>
+        `
+      },
+      {
+        id: 8,
+        title: "記法⑤ 引用 (>)",
+        master: "LIGHT",
+        html: `
+          <div class="absolute inset-0 bg-[#F7F9F6] p-10 flex flex-col justify-between text-[#2D3748]">
+            <div>
+              <h2 class="text-2xl font-bold border-l-4 border-[#84B59F] pl-3 text-[#2D3748]">記法⑤ 引用 (&gt;)</h2>
+              <p class="text-sm text-gray-500 mt-1 pl-4">他者の発言や、他の資料からの転載であることを明示する</p>
+            </div>
+            <div class="grid grid-cols-2 gap-8 my-auto">
+              <div class="bg-slate-900 rounded-xl p-5 shadow-inner text-[#F7F9F6] font-mono flex flex-col justify-between min-h-[180px]">
+                <div class="text-xs text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-700 pb-1 flex items-center justify-between">
+                  <span>Markdown を書くとき</span>
+                  <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                </div>
+                <div class="space-y-2 text-xs md:text-sm">
+                  <p>お客様からのご要望：</p>
+                  <p class="text-[#84B59F]">&gt; ログイン画面をもっとわかりやすく、</p>
+                  <p class="text-[#84B59F]">&gt; ボタンを大きく改善してほしいです。</p>
+                </div>
+                <div class="text-2xs text-gray-500 mt-2">※ 行頭に「&gt;」を置くことで、そこが引用枠になります。</div>
+              </div>
+              <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-200 flex flex-col justify-between min-h-[180px]">
+                <div class="text-xs text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-100 pb-1 flex items-center justify-between">
+                  <span>実際の表示見本</span>
+                  <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                </div>
+                <div class="space-y-2 text-sm leading-relaxed">
+                  <p class="text-xs text-gray-500">お客様からのご要望：</p>
+                  <blockquote class="border-l-4 border-[#50808E] bg-[#50808E]/5 p-3 rounded-r-lg text-gray-600 text-xs italic">
+                    ログイン画面をもっとわかりやすく、<br>
+                    ボタンを大きく改善してほしいです。
+                  </blockquote>
+                </div>
+                <div class="text-2xs text-[#50808E] font-semibold mt-2">
+                  💡 会話の切り出しや、議事録で相手の発言をまとめるときに抜群の効果を発揮します。
+                </div>
+              </div>
+            </div>
+            <div class="text-xs text-right text-gray-400">Markdown超入門</div>
+          </div>
+        `
+      },
+      {
+        id: 9,
+        title: "チートシート (応用への道標)",
+        master: "LIGHT",
+        html: `
+          <div class="absolute inset-0 bg-[#F7F9F6] p-10 flex flex-col justify-between text-[#2D3748]">
+            <div>
+              <h2 class="text-2xl font-bold border-l-4 border-[#84B59F] pl-3 text-[#2D3748]">チートシート (応用への道標)</h2>
+              <p class="text-sm text-gray-500 mt-1 pl-4">少し慣れてきたら使ってみたい、次の便利テクニック</p>
+            </div>
+            <div class="grid grid-cols-3 gap-4 my-auto">
+              <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                <h3 class="font-bold text-[#50808E] text-sm mb-1.5 flex items-center space-x-1">
+                  <i data-lucide="check-square" class="w-4 h-4"></i>
+                  <span>チェックリスト</span>
+                </h3>
+                <div class="bg-slate-900 text-[#84B59F] p-2 rounded text-xs font-mono mb-2">
+                  - [x] 今日のタスク完了<br>
+                  - [ ] 未完了のタスク
+                </div>
+                <p class="text-xs text-gray-500 leading-normal">
+                  チェックボックスをドキュメント上に直接作成。Notionなどでは直接クリックしてチェック可能です。
+                </p>
+              </div>
+              <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                <h3 class="font-bold text-[#50808E] text-sm mb-1.5 flex items-center space-x-1">
+                  <i data-lucide="code" class="w-4 h-4"></i>
+                  <span>コード / 箇条書き枠</span>
+                </h3>
+                <div class="bg-slate-900 text-[#84B59F] p-2 rounded text-xs font-mono mb-2">
+                  \`\`\`bash<br>
+                  git commit -m "initial"<br>
+                  \`\`\`
+                </div>
+                <p class="text-xs text-gray-500 leading-normal">
+                  バッククォート3つ（\`）で囲むと、等幅フォントになり、コードや設定ファイルをきれいに等幅枠で表示できます。
+                </p>
+              </div>
+              <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                <h3 class="font-bold text-[#50808E] text-sm mb-1.5 flex items-center space-x-1">
+                  <i data-lucide="list-ordered" class="w-4 h-4"></i>
+                  <span>番号付きリスト</span>
+                </h3>
+                <div class="bg-slate-900 text-[#84B59F] p-2 rounded text-xs font-mono mb-2">
+                  1. 準備する<br>
+                  2. 実行する<br>
+                  3. 確認する
+                </div>
+                <p class="text-xs text-gray-500 leading-normal">
+                  半角数字とピリオド（1.）から始めるだけで、自動的に美しい段落の番号リストが作成されます。
+                </p>
+              </div>
+            </div>
+            <div class="text-xs text-right text-gray-400">Markdown超入門</div>
+          </div>
+        `
+      },
+      {
+        id: 10,
+        title: "練習問題: Markdownに直してみよう！",
+        master: "LIGHT",
+        html: `
+          <div class="absolute inset-0 bg-[#F7F9F6] p-10 flex flex-col justify-between text-[#2D3748]">
+            <div>
+              <h2 class="text-2xl font-bold border-l-4 border-[#50808E] pl-3 text-[#2D3748]">練習問題: Markdownに直してみよう！</h2>
+              <p class="text-sm text-gray-500 mt-1 pl-4">学んだ記法を使って、以下のベタ書きテキストを読みやすく構造化してください</p>
+            </div>
+            <div class="my-auto max-w-4xl w-full bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col space-y-3">
+              <div class="text-xs font-semibold text-red-600 bg-red-50 py-1 px-3 rounded-full w-max flex items-center space-x-1">
+                <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
+                <span>ぐちゃぐちゃなベタ書きテキスト</span>
+              </div>
+              <div class="bg-[#2D3748]/5 p-4 rounded-lg text-xs md:text-sm font-mono text-gray-700 leading-relaxed max-h-[140px] overflow-y-auto">
+                来週の打ち合わせについて連絡します。日時は6月20日（木）の15時からです。必ず10分前にはオンライン会議にログインしてください。
+                今回の議題（アジェンダ）は3つあります。まず、1つめは自己紹介。2つめはプロジェクトの目的。3つめは今後のスケジュール。
+                詳しいアジェンダ資料は以下のURLから確認してください。
+                社内Wikiのリンク：https://example.com/wiki/markdown-meeting
+              </div>
+              <p class="text-xs text-[#50808E] font-medium leading-relaxed italic">
+                👉 ここで学んだ「見出し（#）」「箇条書き（-）」「太字（**）」「リンク」がどこに使えるか、頭の中で組み立ててみましょう！
+              </p>
+            </div>
+            <div class="text-xs text-right text-gray-400">Markdown超入門</div>
+          </div>
+        `
+      },
+      {
+        id: 11,
+        title: "解答例: 劇的ビフォーアフター",
+        master: "LIGHT",
+        html: `
+          <div class="absolute inset-0 bg-[#F7F9F6] p-10 flex flex-col justify-between text-[#2D3748]">
+            <div>
+              <h2 class="text-2xl font-bold border-l-4 border-[#84B59F] pl-3 text-[#2D3748]">解答例: 劇的ビフォーアフター</h2>
+              <p class="text-sm text-gray-500 mt-1 pl-4">Markdownによってここまで知的で美しいドキュメントに変わります</p>
+            </div>
+            <div class="grid grid-cols-2 gap-6 my-auto">
+              <div class="bg-slate-900 rounded-xl p-4 shadow-inner text-[#F7F9F6] font-mono flex flex-col justify-between min-h-[220px]">
+                <div class="text-xs text-[#84B59F] uppercase tracking-wider mb-1 border-b border-gray-700 pb-1 flex items-center justify-between">
+                  <span>Markdownのコード例</span>
+                  <i data-lucide="code-2" class="w-3.5 h-3.5"></i>
+                </div>
+                <div class="text-xs leading-normal space-y-1 overflow-y-auto max-h-[160px]">
+                  <p class="text-blue-400">## 来週の打ち合わせについて</p>
+                  <p class="text-gray-400">日時は **6月20日（木）15:00** からです。</p>
+                  <p class="text-red-400">⚠️ **10分前までに**必ずログインしてください。</p>
+                  <p class="text-blue-400">### アジェンダ（議題）</p>
+                  <p class="text-gray-400">- 自己紹介</p>
+                  <p class="text-gray-400">- プロジェクトの目的</p>
+                  <p class="text-gray-400">- 今後のスケジュール</p>
+                  <p class="text-gray-400">[詳細はこちらの社内Wiki](https://example.com)</p>
+                </div>
+              </div>
+              <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-200 flex flex-col justify-between min-h-[220px]">
+                <div class="text-xs text-[#50808E] uppercase tracking-wider mb-1 border-b border-gray-100 pb-1 flex items-center justify-between">
+                  <span>綺麗なレンダリング見本</span>
+                  <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                </div>
+                <div class="text-xs space-y-2 text-[#2D3748] overflow-y-auto max-h-[160px]">
+                  <h3 class="text-sm font-bold text-[#2D3748] border-b border-gray-200 pb-0.5">来週の打ち合わせについて</h3>
+                  <p>日時は <strong class="font-extrabold text-[#2D3748]">6月20日（木）15:00</strong> からです。</p>
+                  <p class="text-[#B85042] font-semibold bg-red-50 p-1 rounded">⚠️ 10分前までに必ずログインしてください。</p>
+                  <h4 class="text-xs font-bold text-[#50808E]">アジェンダ（議題）</h4>
+                  <ul class="list-disc pl-4 space-y-0.5">
+                    <li>自己紹介</li>
+                    <li>プロジェクトの目的</li>
+                    <li>今後のスケジュール</li>
+                  </ul>
+                  <p><a href="#" class="text-[#50808E] font-bold underline">詳細はこちらの社内Wiki</a></p>
+                </div>
+              </div>
+            </div>
+            <div class="text-xs text-[#84B59F] font-bold flex items-center space-x-1 pl-1">
+              <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+              <span>マウス操作なしで、この表現力と視認性の高さが一瞬で手に入ります！</span>
+            </div>
+          </div>
+        `
+      },
+      {
+        id: 12,
+        title: "結び",
+        master: "DARK",
+        html: `
+          <div class="absolute inset-0 bg-[#2D3748] p-12 flex flex-col justify-between text-[#F7F9F6]">
+            <div class="flex items-center space-x-2">
+              <span class="h-2 w-8 bg-[#84B59F] rounded-full"></span>
+              <span class="text-sm font-semibold tracking-wider text-[#84B59F]">EPILOGUE</span>
+            </div>
+            <div class="my-auto space-y-6 text-center max-w-2xl mx-auto">
+              <h1 class="text-4xl font-extrabold text-white leading-tight">
+                さあ、今日から実践してみましょう！
+              </h1>
+              <p class="text-sm md:text-base text-[#F7F9F6]/80 leading-relaxed font-light">
+                Markdownは一度覚えると二度と元には戻れないほど、<br>
+                あなたの資料作成・コミュニケーションコストを劇的に下げてくれます。
+              </p>
+              <div class="bg-white/10 p-4 rounded-xl border border-white/10 w-max mx-auto text-xs text-[#84B59F] font-semibold flex items-center space-x-2">
+                <i data-lucide="sparkles" class="w-4 h-4"></i>
+                <span>Notion、Slack、社内メモ帳などで早速「# 」や「- 」を使ってみましょう！</span>
+              </div>
+            </div>
+            <div class="flex justify-between items-center border-t border-[#F7F9F6]/20 pt-4 text-xs text-[#F7F9F6]/50">
+              <span>THANK YOU FOR READING</span>
+              <span>Markdown超入門スライド</span>
+            </div>
+          </div>
+        `
+      }
+    ];
+
+    let currentSlideIndex = 0;
+
+    function renderSlide(index) {
+      const viewport = document.getElementById("slide-viewport");
+      viewport.innerHTML = slideData[index].html;
+
+      // カウンター更新
+      document.getElementById("slide-counter").innerText = `${index + 1} / ${slideData.length}`;
+
+      // プログレスバー更新
+      const pct = ((index + 1) / slideData.length) * 100;
+      document.getElementById("progress-fill").style.width = pct + "%";
+
+      // ボタンの有効/無効
+      document.getElementById("btn-prev").disabled = (index === 0);
+      document.getElementById("btn-next").disabled = (index === slideData.length - 1);
+
+      // アイコンの再適用
+      lucide.createIcons();
+    }
+
+    function nextSlide() {
+      if (currentSlideIndex < slideData.length - 1) {
+        currentSlideIndex++;
+        renderSlide(currentSlideIndex);
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlideIndex > 0) {
+        currentSlideIndex--;
+        renderSlide(currentSlideIndex);
+      }
+    }
+
+    // フルスクリーン
+    function toggleFullscreen() {
+      const wrapper = document.querySelector(".slide-wrapper");
+      if (!document.fullscreenElement &&
+        !document.webkitFullscreenElement &&
+        !document.mozFullScreenElement) {
+        const req = wrapper.requestFullscreen ||
+          wrapper.webkitRequestFullscreen ||
+          wrapper.mozRequestFullScreen;
+        if (req) req.call(wrapper);
+      } else {
+        const exit = document.exitFullscreen ||
+          document.webkitExitFullscreen ||
+          document.mozCancelFullScreen;
+        if (exit) exit.call(document);
+      }
+    }
+
+    function updateFullscreenIcon() {
+      const btn = document.getElementById("btn-fullscreen");
+      const icon = document.getElementById("fullscreen-icon");
+      const isFs = !!(document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.mozFullScreenElement);
+      icon.setAttribute("data-lucide", isFs ? "minimize" : "maximize");
+      btn.classList.toggle("active", isFs);
+      lucide.createIcons();
+    }
+
+    document.addEventListener("fullscreenchange", updateFullscreenIcon);
+    document.addEventListener("webkitfullscreenchange", updateFullscreenIcon);
+    document.addEventListener("mozfullscreenchange", updateFullscreenIcon);
+
+    // キーボード操作
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowRight" || e.key === "ArrowDown" || e.key === " ") {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        prevSlide();
+      } else if (e.key === "f" || e.key === "F") {
+        toggleFullscreen();
+      } else if (e.key === "Escape") {
+        // ブラウザが自動でフルスクリーン解除するので不要だが、アイコン更新のトリガーになる
+      }
+    });
+
+    window.onload = function () {
+      renderSlide(currentSlideIndex);
+    };
+  </script>
+</body>
+
+</html>
