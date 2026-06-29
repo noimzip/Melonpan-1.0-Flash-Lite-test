@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>段ボール配送で学ぶ！GitHub超入門</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind Custom Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        teal: {
+                            800: '#028090',
+                            600: '#00A896',
+                            50: '#F0FDFB'
+                        },
+                        amber: {
+                            500: '#F59E0B',
+                            600: '#D97706'
+                        },
+                        cardboard: '#D1B48C'
+                    },
+                    fontFamily: {
+                        serif: ['Georgia', 'serif'],
+                        sans: ['Calibri', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* フェード効果・アニメーション用 */
+        .slide-transition {
+            transition: all 0.5s ease-in-out;
+        }
+        /* スワイプ感度向上のためのタッチアクション制御 */
+        .swipe-area {
+            touch-action: pan-y;
+        }
+        /* アニメーションキーフレーム */
+        @keyframes truckDrive {
+            0% { transform: translateX(-20px); opacity: 0; }
+            15% { transform: translateX(0); opacity: 1; }
+            85% { transform: translateX(250px); opacity: 1; }
+            100% { transform: translateX(350px); opacity: 0; }
+        }
+        .animate-truck {
+            animation: truckDrive 3s forwards linear;
+        }
+        @keyframes fileFall {
+            0% { transform: translateY(-50px) scale(0.5); opacity: 0; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        .animate-file {
+            animation: fileFall 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* スライド内の文字サイズを一律で大きく調整 */
+        #slide-content .text-xs { font-size: 0.95rem !important; }
+        #slide-content .text-sm { font-size: 1.1rem !important; }
+        #slide-content .text-base { font-size: 1.2rem !important; }
+        #slide-content .text-lg { font-size: 1.35rem !important; }
+        #slide-content .text-xl { font-size: 1.5rem !important; }
+        #slide-content .text-2xl { font-size: 1.75rem !important; }
+        #slide-content .text-3xl { font-size: 2.1rem !important; }
+        #slide-content .text-4xl { font-size: 2.6rem !important; }
+        #slide-content .text-5xl { font-size: 3.2rem !important; }
+        #slide-content .text-[8px] { font-size: 0.75rem !important; }
+        #slide-content .text-[9px] { font-size: 0.8rem !important; }
+        #slide-content .text-[10px] { font-size: 0.85rem !important; }
+        #slide-content .text-[11px] { font-size: 0.9rem !important; }
+        
+        /* 行間（行の間隔）を一律でゆったり広げて視認性を向上 */
+        #slide-content p,
+        #slide-content li {
+            line-height: 1.85 !important;
+        }
+        #slide-content code,
+        #slide-content pre {
+            line-height: 1.5 !important; /* コード部分は適度な行間に収める */
+        }
+        
+        /* リスト項目自体の余白も調整して窮屈さを解消 */
+        #slide-content li {
+            margin-bottom: 0.55rem;
+        }
+
+        /* 明朝体（serif）設定を一律でゴシック体（sans-serif）に上書きし、視認性を向上 */
+        .font-serif,
+        #slide-title,
+        [style*="font-family"] {
+            font-family: 'Calibri', 'system-ui', -apple-system, sans-serif !important;
+        }
+    </style>
+</head>
+<body class="bg-[#f5f2eb] font-sans text-slate-800 min-h-screen flex flex-col justify-between overflow-x-hidden swipe-area" id="body-container">
+
+    <!-- 全体ナビゲーション・現在地マップ -->
+    <header class="w-full bg-[#edeae1] border-b border-[#dfdacd] p-3 sticky top-0 z-50 transition-colors duration-500" id="header">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-3">
+            <div class="flex items-center gap-2">
+                <span class="bg-amber-500 text-slate-950 font-bold px-2 py-0.5 rounded text-sm font-sans">宅配便メタファー</span>
+                <h1 class="text-lg font-bold tracking-tight text-slate-900">段ボール配送で学ぶ！GitHub超入門</h1>
+            </div>
+            
+            <!-- 極小現在地インジケーター（Gitの3つのエリア） -->
+            <div class="flex items-center gap-2 text-xs text-slate-500 bg-[#dfdacd]/50 p-1.5 px-3 rounded-full border border-[#c5bfae]" id="mini-map">
+                <span id="map-step1" class="transition-colors duration-300">❶ ワークスペース (部屋)</span>
+                <span class="text-slate-600">➔</span>
+                <span id="map-step2" class="transition-colors duration-300">❷ ステージ (段ボール)</span>
+                <span class="text-slate-600">➔</span>
+                <span id="map-step3" class="transition-colors duration-300">❸ ローカル倉庫</span>
+                <span class="text-slate-600">➔</span>
+                <span id="map-step4" class="transition-colors duration-300">❹ GitHub (中央倉庫)</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- メインコンテンツ：スライドコンテナ -->
+    <main class="flex-grow flex items-center justify-center p-4 md:p-8 max-w-7xl w-full mx-auto">
+        <div class="w-full bg-white rounded-2xl border border-[#dfdacd] shadow-xl overflow-hidden min-h-[660px] flex flex-col justify-between relative slide-transition" id="slide-card">
+            
+            <!-- 進捗バー（プログレスバー） -->
+            <div class="h-1 bg-slate-200 w-full">
+                <div class="h-full bg-teal-600 transition-all duration-300" id="progress-bar" style="width: 9.09%;"></div>
+            </div>
+
+            <!-- スライド内容がここに動的に流し込まれる -->
+            <div id="slide-content" class="p-6 md:p-12 flex-grow flex flex-col justify-center">
+                <!-- スライド初期化表示 -->
+                <div class="text-center py-20">
+                    <p class="text-slate-500 animate-pulse">スライドを読み込み中...</p>
+                </div>
+            </div>
+
+            <!-- スライド下部コントローラー（全スライド共通） -->
+            <footer class="bg-[#edeae1] border-t border-[#dfdacd] p-4 flex justify-between items-center select-none" id="slide-footer">
+                <button onclick="prevSlide()" id="btn-prev" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 active:scale-95 transition flex items-center gap-2 disabled:opacity-30 disabled:pointer-events-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                    <span>戻る</span>
+                </button>
+
+                <div class="text-sm font-semibold tracking-wider text-slate-500">
+                    <span id="current-slide-num" class="text-teal-700 font-bold">1</span> / <span id="total-slides-num">11</span>
+                </div>
+
+                <button onclick="nextSlide()" id="btn-next" class="px-5 py-2 bg-teal-600 text-white font-bold rounded-lg hover:bg-teal-500 active:scale-95 transition flex items-center gap-2">
+                    <span>進む</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                </button>
+            </footer>
+        </div>
+    </main>
+
+    <!-- コピー成功用トースト通知 -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-emerald-600 text-white px-4 py-2.5 rounded-lg shadow-xl translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center gap-2 pointer-events-none">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+        <span id="toast-text">コマンドをコピーしました！</span>
+    </div>
+
+    <!-- キーボード＆操作ヘルプ表示 -->
+    <div class="text-center text-xs text-slate-600 pb-4 select-none">
+        キーボードの <span class="bg-slate-200 px-1 rounded text-slate-700">←</span> <span class="bg-slate-200 px-1 rounded text-slate-700">→</span> キーや、画面のスワイプでも進退できます
+    </div>
+
+    <script>
+        // スライドの全データ定義（全11枚）
+        // theme: 'dark' (Slateベース) or 'light' (砂・ベージュ・ライトティールベース)
+        const slides = [
+            {
+                id: 1,
+                theme: 'light',
+                title: '段ボール配送で学ぶ！<br class="hidden md:block">GitHub超入門ハンズオン',
+                subtitle: 'Git & GitHub の仕組みを直感的にマスターする決定版スライド',
+                type: 'cover',
+                content: `
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center max-w-5xl mx-auto">
+                        <div class="lg:col-span-7 space-y-6 text-left">
+                            <p class="text-teal-700 uppercase tracking-widest font-semibold text-sm">Welcome to Git & GitHub</p>
+                            <h2 class="text-3xl md:text-5xl font-serif font-black leading-tight text-slate-900" style="font-family: Georgia, serif;">
+                                段ボール配送で学ぶ！<br><span class="text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-emerald-600">GitHub超入門</span>
+                            </h2>
+                            <p class="text-slate-700 text-lg leading-relaxed">
+                                バージョン管理、Gitのコマンド、GitHubって何？<br>難しそうな専門用語も、身近な<span class="text-amber-600 font-bold">「荷物（段ボール）の梱包と配送」</span>に例えれば一発で理解できます！
+                            </p>
+                            <div class="flex items-center gap-4 pt-4">
+                                <span class="flex items-center gap-2 text-sm bg-slate-100 text-slate-700 px-3 py-1.5 rounded-full border border-slate-300">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    実践ハンズオン対応
+                                </span>
+                                <span class="text-sm text-slate-500">推定読破時間: 15分</span>
+                            </div>
+                        </div>
+                        <div class="lg:col-span-5 flex justify-center">
+                            <div class="relative bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-inner w-full max-w-sm flex flex-col items-center">
+                                <!-- インタラクティブな動きを思わせるグラフィック -->
+                                <div class="w-32 h-32 bg-amber-100 rounded-full flex items-center justify-center mb-4">
+                                    <svg class="w-16 h-16 text-amber-600 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                    </svg>
+                                </div>
+                                <div class="text-center">
+                                    <span class="text-xs bg-amber-100 text-amber-700 font-bold px-2.5 py-1 rounded-full">メタファー紹介</span>
+                                    <h4 class="font-bold text-slate-900 mt-2">ファイルを「荷物」として配送しよう</h4>
+                                    <p class="text-xs text-slate-600 mt-1">ワークツリーからGitHub（リモートリポジトリ）までの配送を疑似体験できます。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 2,
+                theme: 'light',
+                title: 'Git と GitHub って別物？',
+                subtitle: '初心者がまず最初につまずく「別物問題」を解消しよう',
+                type: 'concept',
+                content: `
+                    <div class="max-w-4xl mx-auto space-y-8 text-slate-800">
+                        <div class="text-center max-w-2xl mx-auto">
+                            <p class="text-amber-600 font-bold text-sm">💡 超・重要前提知識</p>
+                            <h3 class="text-2xl font-serif font-bold text-slate-900 mt-1">「手元のノート」と「クラスみんなの掲示板」</h3>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+                            <!-- Git -->
+                            <div class="bg-white border border-slate-200 p-6 rounded-xl hover:border-teal-500/50 transition shadow-sm">
+                                <div class="flex items-center gap-3 mb-4">
+                                    <div class="p-2 bg-teal-50 rounded-lg text-teal-600">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                                    </div>
+                                    <h4 class="text-xl font-bold text-slate-900">Git （ギット）</h4>
+                                </div>
+                                <p class="text-slate-600 text-sm mb-4">
+                                    「あなた個人のパソコン（ローカル）」で、ファイルがどう変わってきたかの記録・セーブを取ってくれるツール。
+                                </p>
+                                <div class="bg-slate-50 p-4 rounded border border-slate-200 text-xs text-slate-700">
+                                    <span class="text-amber-600 font-bold">🚚 宅配便メタファー:</span><br>
+                                    手元にあるあなただけの「配送準備室」です。
+                                </div>
+                            </div>
+
+                            <!-- GitHub -->
+                            <div class="bg-white border border-slate-200 p-6 rounded-xl hover:border-teal-500/50 transition shadow-sm">
+                                <div class="flex items-center gap-3 mb-4">
+                                    <div class="p-2 bg-emerald-50 rounded-lg text-emerald-600">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
+                                    </div>
+                                    <h4 class="text-xl font-bold text-slate-900">GitHub （ギットハブ）</h4>
+                                </div>
+                                <p class="text-slate-600 text-sm mb-4">
+                                    インターネット上にある、みんなが配送してきた荷物（ファイルやデータ）を集積・共有する巨大な「中央ネット倉庫」。
+                                </p>
+                                <div class="bg-slate-50 p-4 rounded border border-slate-200 text-xs text-slate-700">
+                                    <span class="text-amber-600 font-bold">🏢 宅配便メタファー:</span><br>
+                                    世界中の荷物が集まり、みんなが見れる「巨大中央物流センター」です。
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-teal-50 border border-teal-200 p-4 rounded-xl text-center text-sm max-w-3xl mx-auto text-slate-800">
+                            <span class="font-bold text-teal-700">💡 結論:</span> Gitを使って手元のファイルを完璧に荷造りし、GitHubというネット上の倉庫へ送り届けてみんなに公開します。
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 3,
+                theme: 'light',
+                title: 'Git がもたらした劇的ビフォーアフター',
+                subtitle: 'なぜわざわざGitを使うのか？その革新性を納得しよう',
+                type: 'concept',
+                content: `
+                    <div class="max-w-4xl mx-auto space-y-6 text-slate-800">
+                        <div class="text-center">
+                            <span class="text-xs bg-red-100 text-red-800 font-bold px-2.5 py-1 rounded-full">Before & After</span>
+                            <h3 class="text-2xl font-serif font-bold text-slate-900 mt-2">あの「ファイルだらけの悲劇」から完全に卒業しよう</h3>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+                            <!-- Before -->
+                            <div class="bg-red-50 border border-red-200 p-5 rounded-xl">
+                                <div class="flex items-center gap-2 mb-3">
+                                    <span class="text-2xl">👿</span>
+                                    <h4 class="text-lg font-bold text-red-900">Git以前の暗黒期（ビフォー）</h4>
+                                </div>
+                                <ul class="space-y-2 text-xs text-red-950">
+                                    <li class="flex items-start gap-1.5">
+                                        <span class="text-red-500">✖</span>
+                                        <span>自己紹介_最新_最終.md</span>
+                                    </li>
+                                    <li class="flex items-start gap-1.5">
+                                        <span class="text-red-500">✖</span>
+                                        <span>自己紹介_最新_最終_本当に最終.md</span>
+                                    </li>
+                                    <li class="flex items-start gap-1.5">
+                                        <span class="text-red-500">✖</span>
+                                        <span>自己紹介_修正版_20260629.zip</span>
+                                    </li>
+                                    <li class="border-t border-red-200 pt-2 text-xs text-red-700 font-bold mt-2">
+                                        問題点：どれが本物の最新かわからず、過去の履歴を探すのも困難。
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <!-- After -->
+                            <div class="bg-teal-50 border border-teal-200 p-5 rounded-xl">
+                                <div class="flex items-center gap-2 mb-3">
+                                    <span class="text-2xl">👼</span>
+                                    <h4 class="text-lg font-bold text-teal-900">Git導入後の世界（アフター）</h4>
+                                </div>
+                                <ul class="space-y-3 text-xs text-teal-950">
+                                    <li class="flex items-center gap-2 bg-white p-2 rounded border border-teal-100 shadow-sm font-mono text-slate-700">
+                                        <span class="text-teal-600 font-bold">📄 profile.md</span>
+                                        <span class="text-[10px] bg-teal-100 text-teal-800 px-1.5 py-0.5 rounded ml-auto">常にファイル名はこれだけ！</span>
+                                    </li>
+                                    <p class="text-xs text-slate-600 leading-relaxed">
+                                        履歴（セーブデータ）は裏でGitがタイムスタンプ・変更メッセージとともに完全に記録。<span class="font-bold text-teal-700">いつでも過去の状態に1クリックで戻せます。</span>
+                                    </p>
+                                    <li class="border-t border-teal-200 pt-2 text-xs text-teal-700 font-bold mt-2">
+                                        革新点：ファイル名が散らからず、変更履歴が美しく一本のタイムラインに。
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl text-xs text-slate-700 text-center max-w-2xl mx-auto">
+                            🚚 <strong class="text-amber-800">宅配便で言うなら：</strong> 過去のバージョンの荷物が自動保管されたトランクルームです。必要な日付の箱をいつでも手元に引き出せます。
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 4,
+                theme: 'light',
+                title: 'ステップ1：準備しよう！ clone と init',
+                subtitle: '自分だけの部屋を立ち上げるか、中央倉庫のデータを複製する',
+                type: 'concept',
+                content: `
+                    <div class="max-w-4xl mx-auto space-y-6 text-slate-800">
+                        <p class="text-sm font-bold text-teal-700 text-center uppercase tracking-wider">── 荷物を動かす前の一番最初の準備 ──</p>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+                            <!-- clone -->
+                            <div class="bg-white border-2 border-slate-100 hover:border-teal-400 p-6 rounded-xl transition shadow-sm relative overflow-hidden">
+                                <div class="absolute top-0 right-0 bg-teal-600 text-white text-[10px] px-3 py-1 rounded-bl font-bold">超おすすめ</div>
+                                <h4 class="text-lg font-bold text-slate-900 mb-2">方法A：既存の倉庫をコピー（推奨）</h4>
+                                <p class="text-xs text-slate-600 mb-4">
+                                    すでにGitHub（中央倉庫）にあるテンプレートやプロジェクトを、あなたのパソコンへそっくりそのままダウンロードして用意します。
+                                </p>
+                                <div class="bg-slate-900 text-teal-400 p-3 rounded font-mono text-xs mb-3 flex items-center justify-between">
+                                    <code>git clone [URL]</code>
+                                    <button onclick="copyCommand('git clone https://github.com/example/profile-template.git')" class="text-slate-500 hover:text-white transition">コピー</button>
+                                </div>
+                                <div class="text-[11px] text-slate-500">
+                                    🚚 <strong class="text-slate-700">宅配便メタファー:</strong> 中央倉庫（GitHub）から自分用の新しい「作業室一式」をレンタルして設置する行為。
+                                </div>
+                            </div>
+
+                            <!-- init -->
+                            <div class="bg-white border-2 border-slate-100 hover:border-teal-400 p-6 rounded-xl transition shadow-sm">
+                                <h4 class="text-lg font-bold text-slate-900 mb-2">方法B：手元の部屋を倉庫化する</h4>
+                                <p class="text-xs text-slate-600 mb-4">
+                                    すでにお手元のPCにある、今ある普通のフォルダに対して、「今日からここをGit管理室にするぞ！」と宣言して立ち上げます。
+                                </p>
+                                <div class="bg-slate-900 text-teal-400 p-3 rounded font-mono text-xs mb-3 flex items-center justify-between">
+                                    <code>git init</code>
+                                    <button onclick="copyCommand('git init')" class="text-slate-500 hover:text-white transition">コピー</button>
+                                </div>
+                                <div class="text-[11px] text-slate-500">
+                                    🚚 <strong class="text-slate-700">宅配便メタファー:</strong> 今ある自分の部屋に「専用の発送用段ボール保管ラック」を1個作りつける行為。
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 5,
+                theme: 'light',
+                title: 'ステップ2：ミッション開始！ファイルの作成',
+                subtitle: '自己紹介用の profile.md をワークスペース（部屋）に用意する',
+                type: 'interactive',
+                content: `
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center max-w-5xl mx-auto text-slate-800">
+                        <div class="lg:col-span-6 space-y-4 text-left">
+                            <span class="text-xs bg-teal-100 text-teal-800 font-bold px-2.5 py-1 rounded-full">ワークスペース（作業室）</span>
+                            <h3 class="text-xl md:text-2xl font-serif font-bold text-slate-900">自分の「作業スペース」にファイルを置く</h3>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                まずは、あなたの部屋（パソコン内の作業用フォルダ、業界用語で「<strong class="text-teal-700">ワークスペース / ワークツリー</strong>」）に、新しい自己紹介カード <code class="bg-slate-100 px-1 rounded font-mono text-red-600 text-[11px]">profile.md</code> を作成します。
+                            </p>
+                            
+                            <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 text-teal-400 font-mono text-xs space-y-1 shadow-inner">
+                                <div class="text-slate-500"># ターミナルで作成して書き込む</div>
+                                <div>echo "# 自己紹介" > profile.md</div>
+                                <div>echo "趣味: 旅行" >> profile.md</div>
+                            </div>
+
+                            <p class="text-xs text-slate-500 italic">※これで、あなたの手元の作業机（ワークスペース）の上にファイルが置かれました！</p>
+                        </div>
+
+                        <!-- ワークスペースの視覚表現 -->
+                        <div class="lg:col-span-6 flex justify-center">
+                            <div class="w-full max-w-sm bg-slate-100 border border-slate-300 rounded-2xl p-6 shadow-sm flex flex-col items-center justify-center min-h-[250px]">
+                                <div class="text-slate-400 text-xs uppercase tracking-widest font-bold mb-4">🏠 あなたの作業部屋（ローカル）</div>
+                                
+                                <div id="interactive-workspace" class="bg-white border-2 border-dashed border-slate-300 w-full rounded-xl p-6 flex flex-col items-center justify-center gap-3 min-h-[160px] transition duration-300">
+                                    <!-- ファイル作成ボタン -->
+                                    <button onclick="createFileInWorkspace()" id="btn-create-file" class="bg-teal-600 text-white font-bold px-4 py-2 rounded shadow hover:bg-teal-500 active:scale-95 transition text-xs flex items-center gap-1.5">
+                                        <span>📄 profile.md を作業机に置く</span>
+                                    </button>
+                                    <p id="workspace-status" class="text-[11px] text-slate-400">作業机の上はからっぽです</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 6,
+                theme: 'light',
+                title: 'ステップ3：荷造り（ add ）',
+                subtitle: '配送用段ボール箱（ステージ）にファイルを詰め込む',
+                type: 'interactive',
+                content: `
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center max-w-5xl mx-auto text-slate-800">
+                        <div class="lg:col-span-5 space-y-4 text-left">
+                            <span class="text-xs bg-amber-100 text-amber-800 font-bold px-2.5 py-1 rounded-full">git add</span>
+                            <h3 class="text-xl md:text-2xl font-serif font-bold text-slate-900">配送段ボール箱（ステージ）に詰める</h3>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                あなたの部屋に散らばっているファイルから、今回配送したいファイルを選んで、発送用の段ボール箱（<strong class="text-teal-700">ステージングエリア / インデックス</strong>）に詰めましょう！
+                            </p>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                なぜ一発でコミットしないの？それは、配送したいものと、まだ作成途中で配送したくないものを、仕分ける必要があるからです。
+                            </p>
+
+                            <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 text-teal-400 font-mono text-xs space-y-1 shadow-inner flex justify-between items-center">
+                                <code>git add profile.md</code>
+                                <button onclick="copyCommand('git add profile.md')" class="text-slate-500 hover:text-white transition text-xs">コピー</button>
+                            </div>
+                        </div>
+
+                        <!-- 荷造りインタラクティブエリア -->
+                        <div class="lg:col-span-7 flex justify-center">
+                            <div class="w-full max-w-md bg-slate-100 border border-slate-300 rounded-2xl p-4 shadow-sm flex flex-col items-center">
+                                <div class="text-slate-500 text-xs font-bold mb-4">🚚 荷造り（add）シミュレーター</div>
+                                
+                                <div class="grid grid-cols-2 gap-4 w-full">
+                                    <!-- 机（ワークスペース） -->
+                                    <div class="bg-white p-3 rounded-xl border border-slate-200 flex flex-col items-center justify-between min-h-[160px]">
+                                        <span class="text-[10px] text-slate-400 font-bold">🏠 あなたの作業机</span>
+                                        <div id="source-file" class="cursor-pointer bg-red-50 border-2 border-red-200 p-2.5 rounded text-center shadow-sm hover:scale-105 active:scale-95 transition-all w-28 text-xs font-mono font-bold" onclick="simulateAdd()">
+                                            📄 profile.md
+                                        </div>
+                                        <span class="text-[10px] text-slate-400 text-center">クリックして段ボールへ！</span>
+                                    </div>
+
+                                    <!-- 段ボール箱（ステージ） -->
+                                    <div class="bg-white p-3 rounded-xl border border-slate-200 flex flex-col items-center justify-between min-h-[160px]">
+                                        <span class="text-[10px] text-slate-400 font-bold">📦 発送段ボール (ステージ)</span>
+                                        <div id="target-box" class="w-24 h-24 bg-amber-100 border-2 border-dashed border-amber-400 rounded-lg flex items-center justify-center relative transition-all duration-300">
+                                            <!-- 段ボールアイコン（空かファイル入り） -->
+                                            <svg id="box-svg" class="w-12 h-12 text-amber-600 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                            </svg>
+                                            <div id="added-file-tag" class="hidden absolute top-3 bg-red-50 text-red-900 border border-red-300 px-1 py-0.5 rounded text-[8px] font-bold font-mono">📄 profile.md</div>
+                                        </div>
+                                        <span id="add-status" class="text-[10px] text-slate-400 text-center font-bold">段ボールはまだ空です</span>
+                                    </div>
+                                </div>
+                                <button onclick="resetAddSimulation()" class="mt-4 text-xs text-teal-600 hover:underline">リセット</button>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 7,
+                theme: 'light',
+                title: 'ステップ4：封をして荷札を貼る（ commit ）',
+                subtitle: 'メッセージ（荷札）を入力してセーブポイント（履歴）を確定させる',
+                type: 'interactive',
+                content: `
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center max-w-5xl mx-auto text-slate-800">
+                        <div class="lg:col-span-5 space-y-4 text-left">
+                            <span class="text-xs bg-amber-100 text-amber-800 font-bold px-2.5 py-1 rounded-full">git commit</span>
+                            <h3 class="text-xl md:text-2xl font-serif font-bold text-slate-900">ガムテープを貼って荷札を貼る</h3>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                段ボールに荷物を詰めたら、ガムテープでしっかり封を閉じます。そして、この荷物には何が入っているのか一目で分かるように、<strong>メッセージ入りの「荷札」（コミットメッセージ）</strong>を貼り付けます。
+                            </p>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                コミットすると、手元の「ローカル倉庫」にセーブデータとして履歴が永続保存されます。
+                            </p>
+
+                            <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 text-teal-400 font-mono text-xs space-y-1 shadow-inner">
+                                <div>git commit -m "自己紹介を新規作成"</div>
+                            </div>
+                        </div>
+
+                        <!-- コミットインタラクティブエリア -->
+                        <div class="lg:col-span-7 flex justify-center">
+                            <div class="w-full max-w-md bg-slate-100 border border-slate-300 rounded-2xl p-4 shadow-sm flex flex-col items-center">
+                                <div class="text-slate-500 text-xs font-bold mb-4">📦 コミット（メッセージ貼付）シミュレーター</div>
+                                
+                                <div class="bg-white p-4 rounded-xl border border-slate-200 w-full flex flex-col items-center gap-4">
+                                    <!-- 段ボール表示 -->
+                                    <div class="relative flex flex-col items-center justify-center">
+                                        <div id="commit-box" class="w-32 h-32 bg-amber-500 rounded-xl flex flex-col items-center justify-center shadow-md relative transition duration-300">
+                                            <!-- ガムテープ -->
+                                            <div id="tape-line" class="absolute top-1/2 left-0 right-0 h-4 bg-amber-800/20 transform -translate-y-1/2 hidden border-y border-amber-900/10"></div>
+                                            
+                                            <!-- 荷札 -->
+                                            <div id="shipping-tag" class="absolute -top-3 right-2 bg-white border border-slate-400 p-1 px-2 rounded shadow text-[9px] font-mono text-slate-800 hidden font-bold">
+                                                🏷️ <span id="tag-msg-text">自己紹介作成</span>
+                                            </div>
+
+                                            <svg class="w-12 h-12 text-amber-950 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                            </svg>
+                                        </div>
+                                        <p id="commit-status" class="text-xs text-slate-500 font-bold mt-3">まだ封（コミット）がされていません</p>
+                                    </div>
+
+                                    <!-- メッセージ入力欄 -->
+                                    <div class="w-full space-y-2">
+                                        <label class="text-[11px] text-slate-500 font-bold block">荷札のメッセージ（コミットメッセージ）を入力：</label>
+                                        <div class="flex gap-2">
+                                            <input type="text" id="input-commit-msg" value="自己紹介カードの作成" class="flex-grow border border-slate-300 rounded px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-teal-600">
+                                            <button onclick="executeCommit()" class="bg-amber-600 text-white font-bold px-4 py-1.5 rounded shadow hover:bg-amber-500 text-xs transition active:scale-95">コミットする</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button onclick="resetCommitSimulation()" class="mt-3 text-xs text-teal-600 hover:underline">リセット</button>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 8,
+                theme: 'light',
+                title: 'ステップ5：発送する（ push ）',
+                subtitle: 'トラックに段ボールを積んで、GitHub（中央倉庫）へ届ける',
+                type: 'interactive',
+                content: `
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center max-w-5xl mx-auto text-slate-800">
+                        <div class="lg:col-span-5 space-y-4 text-left">
+                            <span class="text-xs bg-amber-100 text-amber-800 font-bold px-2.5 py-1 rounded-full">git push</span>
+                            <h3 class="text-xl md:text-2xl font-serif font-bold text-slate-900">トラックで中央倉庫（GitHub）へ！</h3>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                お手元の倉庫に保存したすべての荷物は、インターネットという高速道路を通って、最終目標であるGitHub（中央ネット倉庫）へ発送する必要があります！
+                            </p>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                この発送コマンドが「<strong class="text-teal-700">Push（プッシュ）</strong>」です。これによって、世界中の人があなたの作品（スライドやコード）を閲覧できるようになります。
+                            </p>
+
+                            <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 text-teal-400 font-mono text-xs space-y-1 shadow-inner flex justify-between items-center">
+                                <code>git push origin main</code>
+                                <button onclick="copyCommand('git push origin main')" class="text-slate-500 hover:text-white transition text-xs">コピー</button>
+                            </div>
+                        </div>
+
+                        <!-- 発送インタラクティブエリア -->
+                        <div class="lg:col-span-7 flex justify-center">
+                            <div class="w-full max-w-md bg-slate-100 border border-slate-300 rounded-2xl p-4 shadow-sm flex flex-col items-center">
+                                <div class="text-slate-500 text-xs font-bold mb-4">🚛 発送（push）シミュレーター</div>
+                                
+                                <div class="bg-white p-4 rounded-xl border border-slate-200 w-full flex flex-col items-center justify-between min-h-[180px] relative overflow-hidden">
+                                    
+                                    <!-- コース表現 -->
+                                    <div class="flex justify-between items-center w-full mt-6 relative">
+                                        <!-- 手元倉庫 -->
+                                        <div class="z-10 flex flex-col items-center">
+                                            <span class="text-[9px] text-slate-400">🏠 手元の倉庫</span>
+                                            <div class="w-12 h-12 bg-slate-200 border border-slate-400 rounded-lg flex items-center justify-center shadow-inner">
+                                                📦
+                                            </div>
+                                        </div>
+
+                                        <!-- 高速道路点線 -->
+                                        <div class="absolute left-10 right-10 top-8 h-1 bg-dashed border-t-2 border-slate-300 z-0"></div>
+
+                                        <!-- トラックアニメーション -->
+                                        <div id="delivery-truck" class="absolute left-10 top-2 z-10 transition-all duration-300" style="left: 20px; opacity: 1;">
+                                            <div class="text-3xl">🚚</div>
+                                        </div>
+
+                                        <!-- GitHub中央倉庫 -->
+                                        <div class="z-10 flex flex-col items-center">
+                                            <span class="text-[9px] text-slate-400">🏢 GitHub (ネット)</span>
+                                            <div id="github-hq" class="w-14 h-14 bg-teal-800 text-white rounded-xl flex flex-col items-center justify-center shadow-lg transition-colors">
+                                                <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.008.069-.008 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.579.688.481C19.137 20.162 22 16.418 22 12c0-5.523-4.477-10-10-10z"></path>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="w-full text-center mt-4">
+                                        <p id="push-status" class="text-xs text-slate-500 font-bold mb-3">🚚 トラックに荷物が積まれています。発送しましょう！</p>
+                                        <button onclick="executePush()" id="btn-push-action" class="bg-teal-600 text-white font-bold px-6 py-2 rounded-full hover:bg-teal-500 active:scale-95 transition text-xs shadow-md">トラックを出発させる（Push）</button>
+                                    </div>
+                                </div>
+                                <button onclick="resetPushSimulation()" class="mt-3 text-xs text-teal-600 hover:underline">リセット</button>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 9,
+                theme: 'light',
+                title: 'ステップ6：別動隊（ branch ）',
+                subtitle: 'パラレルワールドを部屋の中に作り出し、安全に別件作業を並行する',
+                type: 'interactive',
+                content: `
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center max-w-5xl mx-auto text-slate-800">
+                        <div class="lg:col-span-5 space-y-4 text-left">
+                            <span class="text-xs bg-amber-100 text-amber-800 font-bold px-2.5 py-1 rounded-full">git branch</span>
+                            <h3 class="text-xl md:text-2xl font-serif font-bold text-slate-900">並行して別の机（ブランチ）で作業する</h3>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                Gitの最大の強みの1つが、この「<strong class="text-teal-700">ブランチ（枝分かれ）</strong>」機能です。
+                            </p>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                部屋の中に「もう一つのパラレルワールドの作業机」を作り出すことで、今の最新状態を壊すことなく、安全に新しい実験や新機能の追加に取り組むことができます。
+                            </p>
+
+                            <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 text-teal-400 font-mono text-xs space-y-1 shadow-inner">
+                                <div class="text-slate-500"># new-featureという名前の別机を作る</div>
+                                <div>git branch new-feature</div>
+                                <div class="text-slate-500 mt-1"># その別机に作業場所を切り替える</div>
+                                <div>git checkout new-feature</div>
+                            </div>
+                        </div>
+
+                        <!-- ブランチインタラクティブエリア -->
+                        <div class="lg:col-span-7 flex justify-center">
+                            <div class="w-full max-w-md bg-slate-100 border border-slate-300 rounded-2xl p-4 shadow-sm flex flex-col items-center">
+                                <div class="text-slate-500 text-xs font-bold mb-4">🌿 ブランチ（並行世界分岐）シミュレーター</div>
+                                
+                                <div class="bg-white p-4 rounded-xl border border-slate-200 w-full flex flex-col items-center justify-center min-h-[180px] relative">
+                                    <div class="w-full flex flex-col gap-4">
+                                        <!-- 分岐図 -->
+                                        <div class="relative h-28 w-full border-b border-slate-100">
+                                            <!-- 本流の線 (main) -->
+                                            <div class="absolute left-4 right-4 top-8 h-1 bg-teal-600 rounded"></div>
+                                            <div class="absolute left-8 top-6 w-5 h-5 bg-teal-600 rounded-full border-2 border-white flex items-center justify-center text-[8px] text-white font-bold shadow">m1</div>
+                                            <div class="absolute left-28 top-6 w-5 h-5 bg-teal-600 rounded-full border-2 border-white flex items-center justify-center text-[8px] text-white font-bold shadow">m2</div>
+                                            <div class="absolute right-12 top-6 w-5 h-5 bg-teal-600 rounded-full border-2 border-white flex items-center justify-center text-[8px] text-white font-bold shadow">m3</div>
+                                            <span class="absolute left-4 top-2 text-[9px] text-teal-600 font-bold">main ブランチ (メインルート)</span>
+
+                                            <!-- 分岐した線 (feature) -->
+                                            <div id="branch-line" class="absolute left-28 right-12 top-20 h-1 bg-amber-500 rounded hidden opacity-0 transition-all duration-500"></div>
+                                            <div id="branch-node-1" class="absolute left-44 top-18 w-5 h-5 bg-amber-500 rounded-full border-2 border-white flex items-center justify-center text-[8px] text-white font-bold shadow hidden opacity-0 transition-all duration-500">f1</div>
+                                            <div id="branch-node-2" class="absolute right-12 top-18 w-5 h-5 bg-amber-500 rounded-full border-2 border-white flex items-center justify-center text-[8px] text-white font-bold shadow hidden opacity-0 transition-all duration-500">f2</div>
+                                            <span id="branch-text" class="absolute left-28 top-24 text-[9px] text-amber-600 font-bold hidden opacity-0 transition-all duration-500">new-feature ブランチ (新機能ルート)</span>
+                                        </div>
+
+                                        <div class="text-center">
+                                            <p id="branch-status" class="text-xs text-slate-500 font-bold mb-2">現在は main（大通り）だけで作業しています</p>
+                                            <button onclick="executeBranch()" id="btn-branch-action" class="bg-amber-500 text-slate-950 font-black px-5 py-2 rounded-lg hover:bg-amber-400 active:scale-95 transition text-xs shadow">新しいブランチ（別机）を分岐させる</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button onclick="resetBranchSimulation()" class="mt-3 text-xs text-teal-600 hover:underline">リセット</button>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 10,
+                theme: 'light',
+                title: 'ステップ7：最新版の受け取り（ pull ）',
+                subtitle: 'GitHub（中央倉庫）にある最新の荷物を取り込んで同期する',
+                type: 'concept',
+                content: `
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center max-w-5xl mx-auto text-slate-800">
+                        <div class="lg:col-span-5 space-y-4 text-left">
+                            <span class="text-xs bg-amber-100 text-amber-800 font-bold px-2.5 py-1 rounded-full">git pull</span>
+                            <h3 class="text-xl md:text-2xl font-serif font-bold text-slate-900">中央倉庫の最新状態を受け取る（引っ張る）</h3>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                あなたがローカルで作業している間、もしかしたら他の共同開発者がGitHub（中央倉庫）に新しい最新の荷物（変更）をプッシュして置いたかもしれません。
+                            </p>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                手元の作業部屋を「最新状態」にアップデートするために、中央倉庫から最新データを持ってきて手元にマージ（合流）させるコマンドが「<strong class="text-teal-700">Pull（プル）</strong>」です。
+                            </p>
+
+                            <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 text-teal-400 font-mono text-xs space-y-1 shadow-inner flex justify-between items-center">
+                                <code>git pull origin main</code>
+                                <button onclick="copyCommand('git pull origin main')" class="text-slate-500 hover:text-white transition text-xs">コピー</button>
+                            </div>
+                        </div>
+
+                        <!-- プル概念図 -->
+                        <div class="lg:col-span-7 flex justify-center">
+                            <div class="w-full max-w-md bg-slate-100 border border-slate-300 rounded-2xl p-5 shadow-sm flex flex-col items-center">
+                                <span class="text-slate-500 text-xs font-bold mb-4">📥 同期（pull）の流れ</span>
+                                
+                                <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 w-full space-y-4 text-xs">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-full bg-teal-800 text-white flex items-center justify-center font-bold">1</div>
+                                        <div>
+                                            <p class="font-bold text-slate-800">GitHub (クラウド中央倉庫)</p>
+                                            <p class="text-[10px] text-slate-500">誰かが更新した最新バージョンが保管されている</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="pl-4 border-l-2 border-dashed border-teal-600 py-1 ml-4 text-teal-600 font-bold">
+                                        📥 git pull で引っ張ってくる！
+                                    </div>
+
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-full bg-slate-200 border border-slate-400 flex items-center justify-center font-bold">2</div>
+                                        <div>
+                                            <p class="font-bold text-slate-800">あなたのローカルPC (手元の作業スペース)</p>
+                                            <p class="text-[10px] text-slate-500">手元のファイルが自動的に最新版に合流・更新される</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-teal-50 border border-teal-200 rounded p-3 text-[10px] text-teal-900 mt-4 text-center">
+                                    💡 <strong class="text-teal-950">ベストプラクティス：</strong> 朝の作業を始める前や、新しいブランチを作る前には、まず <code class="bg-white px-1 border border-teal-200 rounded font-mono">git pull</code> して世界を最新にしておきましょう！
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                id: 11,
+                theme: 'light',
+                title: '発展：世界に公開してみよう！ & まとめ',
+                subtitle: 'GitHub Pages によるWebサイト自動公開と、全体の振り返り',
+                type: 'cover',
+                content: `
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center max-w-5xl mx-auto text-slate-800">
+                        <div class="lg:col-span-6 space-y-6 text-left">
+                            <span class="text-xs bg-amber-500 text-slate-950 font-bold px-3 py-1 rounded-full uppercase tracking-wider">発展課題: GitHub Pages</span>
+                            <h3 class="text-2xl md:text-4xl font-serif font-black text-slate-900 leading-tight">作ったカードが、一瞬でWebサイトになる！</h3>
+                            <p class="text-sm leading-relaxed text-slate-700">
+                                自己紹介をマークダウンではなく、HTML/CSSで書いたファイル（例：<code class="bg-slate-100 px-1.5 py-0.5 rounded text-teal-700 border border-slate-200 font-mono text-xs">index.html</code>）に変更してGitHubへプッシュすると、特別な設定なしで全世界へあなたのWebサイトとして公開できます！
+                            </p>
+                            
+                            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs space-y-2">
+                                <p class="font-bold text-slate-800">簡単3ステップ公開方法:</p>
+                                <ol class="list-decimal pl-4 space-y-1 text-slate-600">
+                                    <li>リポジトリの「Settings（設定）」タブを開く</li>
+                                    <li>左メニューから「Pages」を選択</li>
+                                    <li>Build and deploymentのSourceを「Deploy from a branch」にして、Branchを「main」にしてSave！</li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <!-- 振り返り・まとめカード -->
+                        <div class="lg:col-span-6">
+                            <div class="bg-teal-50/50 p-6 rounded-2xl border border-teal-200 shadow-sm space-y-4">
+                                <h4 class="text-lg font-bold text-teal-700 border-b border-teal-200 pb-2">🚚 覚えた7大コマンドおさらい</h4>
+                                <div class="grid grid-cols-2 gap-2 text-xs text-slate-700">
+                                    <div class="bg-white p-2 rounded border border-slate-200">
+                                        <strong class="text-slate-800 block font-mono">1. init / clone</strong>
+                                        準備。部屋を構築する
+                                    </div>
+                                    <div class="bg-white p-2 rounded border border-slate-200">
+                                        <strong class="text-slate-800 block font-mono">2. add</strong>
+                                        段ボールに詰める
+                                    </div>
+                                    <div class="bg-white p-2 rounded border border-slate-200">
+                                        <strong class="text-slate-800 block font-mono">3. commit</strong>
+                                        封をして、荷札を貼る
+                                    </div>
+                                    <div class="bg-white p-2 rounded border border-slate-200">
+                                        <strong class="text-slate-800 block font-mono">4. push</strong>
+                                        トラックで中央へ発送！
+                                    </div>
+                                    <div class="bg-white p-2 rounded border border-slate-200 col-span-2">
+                                        <strong class="text-slate-800 block font-mono">5. branch / pull</strong>
+                                        パラレルワールド（別机）作業 ＆ 最新の同期
+                                    </div>
+                                </div>
+                                <div class="text-center pt-2">
+                                    <p class="text-xs text-slate-600 italic">おめでとうございます！これであなたも今日から自信を持ってGitHubを使えます！</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `
+            }
+        ];
+
+        // 状態変数
+        let currentSlideIndex = 0;
+        
+        // インタラクティブゲーム用の独自ステート
+        let isFileCreated = false;
+        let isFileAdded = false;
+        let isCommitted = false;
+        let isPushed = false;
+        let isBranched = false;
+
+        // 初期化処理
+        window.onload = function() {
+            renderSlide(currentSlideIndex);
+            updateUI();
+            
+            // キーボード操作設定
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'ArrowRight') {
+                    nextSlide();
+                } else if (e.key === 'ArrowLeft') {
+                    prevSlide();
+                }
+            });
+
+            // スマホ向けタッチスワイプ操作設定
+            let touchStartX = 0;
+            let touchEndX = 0;
+            const container = document.getElementById('body-container');
+            
+            container.addEventListener('touchstart', function(e) {
+                touchStartX = e.changedTouches[0].screenX;
+            }, false);
+
+            container.addEventListener('touchend', function(e) {
+                touchEndX = e.changedTouches[0].screenX;
+                handleSwipe();
+            }, false);
+
+            function handleSwipe() {
+                const swipeThreshold = 50; // スワイプとみなすピクセル数
+                if (touchStartX - touchEndX > swipeThreshold) {
+                    nextSlide(); // 左スワイプ（次へ）
+                } else if (touchEndX - touchStartX > swipeThreshold) {
+                    prevSlide(); // 右スワイプ（戻る）
+                }
+            }
+        };
+
+        // スライド描画処理
+        function renderSlide(index) {
+            const slide = slides[index];
+            const contentContainer = document.getElementById('slide-content');
+            
+            // スライドの内容をHTMLに流し込む
+            contentContainer.innerHTML = `
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl md:text-3xl font-serif font-black tracking-tight" id="slide-title" style="font-family: Georgia, serif;">
+                        ${slide.title}
+                    </h2>
+                    <p class="text-xs md:text-sm text-slate-500 mt-2" id="slide-subtitle">
+                        ${slide.subtitle}
+                    </p>
+                </div>
+                <div class="flex-grow flex flex-col justify-center min-h-[420px]">
+                    ${slide.content}
+                </div>
+            `;
+
+            // テーマの変更（ダーク/ライト サンドイッチ構造）
+            const body = document.getElementById('body-container');
+            const header = document.getElementById('header');
+            const footer = document.getElementById('slide-footer');
+            const slideCard = document.getElementById('slide-card');
+            const titleElement = document.getElementById('slide-title');
+            const subtitleElement = document.getElementById('slide-subtitle');
+
+            if (slide.theme === 'dark') {
+                // ライトテーマに統一（砂・ベージュ・ライトティール）
+                body.className = "bg-[#f5f2eb] font-sans text-slate-800 min-h-screen flex flex-col justify-between overflow-x-hidden swipe-area transition-colors duration-500";
+                header.className = "w-full bg-[#edeae1] border-b border-[#dfdacd] p-3 sticky top-0 z-50 transition-colors duration-500";
+                footer.className = "bg-[#edeae1] border-t border-[#dfdacd] p-4 flex justify-between items-center select-none transition-colors duration-500";
+                slideCard.className = "w-full bg-white rounded-2xl border border-[#dfdacd] shadow-xl overflow-hidden min-h-[660px] flex flex-col justify-between relative slide-transition transition-colors duration-500";
+                
+                titleElement.className = "text-2xl md:text-3xl font-serif font-black tracking-tight text-slate-900";
+                subtitleElement.className = "text-xs md:text-sm text-teal-700 mt-2";
+            } else {
+                // ライトテーマ（砂・ベージュ・ライトティール）
+                body.className = "bg-[#f5f2eb] font-sans text-slate-800 min-h-screen flex flex-col justify-between overflow-x-hidden swipe-area transition-colors duration-500";
+                header.className = "w-full bg-[#edeae1] border-b border-[#dfdacd] p-3 sticky top-0 z-50 transition-colors duration-500";
+                footer.className = "bg-[#edeae1] border-t border-[#dfdacd] p-4 flex justify-between items-center select-none transition-colors duration-500";
+                slideCard.className = "w-full bg-white rounded-2xl border border-[#dfdacd] shadow-xl overflow-hidden min-h-[660px] flex flex-col justify-between relative slide-transition transition-colors duration-500";
+                
+                titleElement.className = "text-2xl md:text-3xl font-serif font-black tracking-tight text-slate-900";
+                subtitleElement.className = "text-xs md:text-sm text-teal-700 mt-2";
+            }
+
+            // 特殊な状態保存の復元（各インタラクティブスライド用）
+            restoreInteractiveStates(slide.id);
+        }
+
+        // 各インタラクティブ要素の状態をDOMに反映・復元する関数
+        function restoreInteractiveStates(slideId) {
+            if (slideId === 5) {
+                // スライド5：ファイル作成
+                const btn = document.getElementById('btn-create-file');
+                const status = document.getElementById('workspace-status');
+                const workspace = document.getElementById('interactive-workspace');
+                
+                if (isFileCreated) {
+                    btn.innerHTML = '<span>📄 profile.md は作業机にあります</span>';
+                    btn.className = "bg-emerald-600 text-white font-bold px-4 py-2 rounded shadow transition text-xs pointer-events-none";
+                    status.innerHTML = '<strong class="text-emerald-700">準備OK！</strong> 自己紹介カードが机の上に置かれました。次のスライドで荷造りしましょう！';
+                    workspace.className = "bg-emerald-50/50 border-2 border-emerald-400 w-full rounded-xl p-6 flex flex-col items-center justify-center gap-3 min-h-[160px]";
+                }
+            } else if (slideId === 6) {
+                // スライド6：荷造り (add)
+                const source = document.getElementById('source-file');
+                const tag = document.getElementById('added-file-tag');
+                const status = document.getElementById('add-status');
+                const box = document.getElementById('target-box');
+
+                if (isFileAdded) {
+                    source.className = "opacity-30 border border-slate-300 p-2.5 rounded text-center w-28 text-xs font-mono text-slate-400 pointer-events-none";
+                    tag.classList.remove('hidden');
+                    status.innerHTML = '<span class="text-emerald-600 font-bold">🎉 荷造り完了！ (Stage)</span>';
+                    box.className = "w-24 h-24 bg-amber-200 border-2 border-amber-600 rounded-lg flex items-center justify-center relative scale-105";
+                }
+            } else if (slideId === 7) {
+                // スライド7：コミット
+                const box = document.getElementById('commit-box');
+                const status = document.getElementById('commit-status');
+                const tape = document.getElementById('tape-line');
+                const tag = document.getElementById('shipping-tag');
+                const input = document.getElementById('input-commit-msg');
+
+                if (isCommitted) {
+                    box.className = "w-32 h-32 bg-amber-700 rounded-xl flex flex-col items-center justify-center shadow-md relative scale-105";
+                    tape.classList.remove('hidden');
+                    tag.classList.remove('hidden');
+                    status.innerHTML = '<span class="text-emerald-600 font-bold">🎉 封印＆荷札貼付完了！（コミット確定）</span>';
+                    input.disabled = true;
+                }
+            } else if (slideId === 8) {
+                // スライド8：プッシュ
+                const truck = document.getElementById('delivery-truck');
+                const status = document.getElementById('push-status');
+                const btn = document.getElementById('btn-push-action');
+                const github = document.getElementById('github-hq');
+
+                if (isPushed) {
+                    truck.style.left = "250px";
+                    status.innerHTML = '<span class="text-emerald-600 font-bold font-serif text-sm">🎉 発送完了！GitHub中央倉庫に保存されました！</span>';
+                    btn.className = "bg-emerald-600 text-white font-bold px-6 py-2 rounded-full cursor-not-allowed text-xs shadow-md pointer-events-none";
+                    btn.innerHTML = "発送済み";
+                    github.className = "w-14 h-14 bg-emerald-600 text-white rounded-xl flex flex-col items-center justify-center shadow-lg transform scale-110";
+                }
+            } else if (slideId === 9) {
+                // スライド9：ブランチ
+                const line = document.getElementById('branch-line');
+                const node1 = document.getElementById('branch-node-1');
+                const node2 = document.getElementById('branch-node-2');
+                const text = document.getElementById('branch-text');
+                const status = document.getElementById('branch-status');
+                const btn = document.getElementById('btn-branch-action');
+
+                if (isBranched) {
+                    line.className = "absolute left-28 right-12 top-20 h-1 bg-amber-500 rounded block opacity-100 transition-all duration-500";
+                    node1.className = "absolute left-44 top-18 w-5 h-5 bg-amber-500 rounded-full border-2 border-white flex items-center justify-center text-[8px] text-white font-bold shadow block opacity-100 transition-all duration-500";
+                    node2.className = "absolute right-12 top-18 w-5 h-5 bg-amber-500 rounded-full border-2 border-white flex items-center justify-center text-[8px] text-white font-bold shadow block opacity-100 transition-all duration-500";
+                    text.className = "absolute left-28 top-24 text-[9px] text-amber-600 font-bold block opacity-100 transition-all duration-500";
+                    
+                    status.innerHTML = '<span class="text-amber-600 font-bold">🌿 パラレルワールド（new-feature）が分岐されました！</span>';
+                    btn.className = "bg-amber-600 text-white font-bold px-5 py-2 rounded-lg cursor-not-allowed text-xs shadow pointer-events-none";
+                    btn.innerHTML = "ブランチ分岐完了！";
+                }
+            }
+        }
+
+        // 次のスライドへ進む
+        function nextSlide() {
+            if (currentSlideIndex < slides.length - 1) {
+                currentSlideIndex++;
+                renderSlide(currentSlideIndex);
+                updateUI();
+            }
+        }
+
+        // 前のスライドに戻る
+        function prevSlide() {
+            if (currentSlideIndex > 0) {
+                currentSlideIndex--;
+                renderSlide(currentSlideIndex);
+                updateUI();
+            }
+        }
+
+        // 共通UIの更新（進捗バー、現在地インディケータ、フッター、ボタン有効化）
+        function updateUI() {
+            // ページ番号表示
+            document.getElementById('current-slide-num').innerText = currentSlideIndex + 1;
+            document.getElementById('total-slides-num').innerText = slides.length;
+
+            // 進捗バー更新
+            const progressPercent = ((currentSlideIndex + 1) / slides.length) * 100;
+            document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+
+            // 「戻る」ボタンの非活性化制御
+            const btnPrev = document.getElementById('btn-prev');
+            if (currentSlideIndex === 0) {
+                btnPrev.disabled = true;
+            } else {
+                btnPrev.disabled = false;
+            }
+
+            // 「進む」ボタンを最後のスライドで「完了」に
+            const btnNext = document.getElementById('btn-next');
+            if (currentSlideIndex === slides.length - 1) {
+                btnNext.innerHTML = `
+                    <span>最初から見る</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.706 9H18" /></svg>
+                `;
+                // 最後のスライドで押すと最初のスライドにリセット
+                btnNext.onclick = function() {
+                    currentSlideIndex = 0;
+                    renderSlide(currentSlideIndex);
+                    updateUI();
+                };
+            } else {
+                btnNext.innerHTML = `
+                    <span>進む</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                `;
+                btnNext.onclick = nextSlide;
+            }
+
+            // 現在地インジケーター（極小マップ）のテキスト着色更新
+            const step1 = document.getElementById('map-step1');
+            const step2 = document.getElementById('map-step2');
+            const step3 = document.getElementById('map-step3');
+            const step4 = document.getElementById('map-step4');
+
+            // 一旦クリア
+            step1.className = "text-slate-400 font-semibold";
+            step2.className = "text-slate-400 font-semibold";
+            step3.className = "text-slate-400 font-semibold";
+            step4.className = "text-slate-400 font-semibold";
+
+            // スライドのIDに応じて現在地のアクティブカラーを変更
+            const slideId = slides[currentSlideIndex].id;
+            if (slideId === 5) {
+                // ワークスペース
+                step1.className = "text-teal-700 font-bold border-b-2 border-teal-600 pb-0.5";
+            } else if (slideId === 6) {
+                // ステージング
+                step2.className = "text-amber-600 font-bold border-b-2 border-amber-500 pb-0.5";
+            } else if (slideId === 7) {
+                // ローカル倉庫（コミット）
+                step3.className = "text-amber-700 font-bold border-b-2 border-amber-600 pb-0.5";
+            } else if (slideId >= 8 && slideId <= 11) {
+                // リモート（push / branch / pull / pages）
+                step4.className = "text-emerald-700 font-bold border-b-2 border-emerald-600 pb-0.5";
+            }
+        }
+
+        // コマンドコピー機能
+        function copyCommand(text) {
+            const tempInput = document.createElement("input");
+            tempInput.value = text;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempInput);
+
+            showToast("クリップボードにコピーしました！");
+        }
+
+        // トースト通知を表示
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastText = document.getElementById('toast-text');
+            toastText.innerText = message;
+            
+            toast.className = "fixed bottom-6 right-6 bg-emerald-600 text-white px-4 py-2.5 rounded-lg shadow-xl translate-y-0 opacity-100 transition-all duration-300 z-50 flex items-center gap-2 pointer-events-none";
+            
+            setTimeout(() => {
+                toast.className = "fixed bottom-6 right-6 bg-emerald-600 text-white px-4 py-2.5 rounded-lg shadow-xl translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center gap-2 pointer-events-none";
+            }, 2500);
+        }
+
+        /* ----------------------------------------------------
+         * インタラクティブゲームシミュレーション関数群
+         * ---------------------------------------------------*/
+
+        // スライド5：ファイルを生成
+        function createFileInWorkspace() {
+            isFileCreated = true;
+            const btn = document.getElementById('btn-create-file');
+            const status = document.getElementById('workspace-status');
+            const workspace = document.getElementById('interactive-workspace');
+
+            btn.innerHTML = '<span>📄 profile.md は作業机にあります</span>';
+            btn.className = "bg-emerald-600 text-white font-bold px-4 py-2 rounded shadow transition text-xs pointer-events-none animate-bounce";
+            status.innerHTML = '<strong class="text-emerald-700">準備OK！</strong> 自己紹介カードが机の上に置かれました。次のスライドで荷造りしましょう！';
+            workspace.className = "bg-emerald-50/50 border-2 border-emerald-400 w-full rounded-xl p-6 flex flex-col items-center justify-center gap-3 min-h-[160px]";
+
+            showToast("作業用ファイル profile.md を机に準備しました！");
+        }
+
+        // スライド6：荷造り（add）シミュレーション
+        function simulateAdd() {
+            if (isFileAdded) return;
+            
+            isFileAdded = true;
+            const source = document.getElementById('source-file');
+            const tag = document.getElementById('added-file-tag');
+            const status = document.getElementById('add-status');
+            const box = document.getElementById('target-box');
+
+            // 机からファイルを消す風
+            source.className = "opacity-30 border border-slate-300 p-2.5 rounded text-center w-28 text-xs font-mono text-slate-400 pointer-events-none transition duration-500";
+            
+            // 箱にファイルが落ちるアニメーション演出
+            tag.classList.remove('hidden');
+            tag.className = "absolute top-3 bg-red-50 text-red-900 border border-red-300 px-1 py-0.5 rounded text-[8px] font-bold font-mono animate-file";
+            
+            status.innerHTML = '<span class="text-emerald-600 font-bold animate-pulse">🎉 荷造り完了！ (Stage)</span>';
+            box.className = "w-24 h-24 bg-amber-200 border-2 border-amber-600 rounded-lg flex items-center justify-center relative scale-105 transition duration-300";
+
+            showToast("ファイルを発送段ボール（ステージング）に詰めました！");
+        }
+
+        function resetAddSimulation() {
+            isFileAdded = false;
+            renderSlide(currentSlideIndex);
+        }
+
+        // スライド7：コミット確定シミュレーション
+        function executeCommit() {
+            const input = document.getElementById('input-commit-msg');
+            const msg = input.value.trim();
+
+            if (!msg) {
+                showToast("メッセージ荷札を入力してください！");
+                return;
+            }
+
+            isCommitted = true;
+            const box = document.getElementById('commit-box');
+            const status = document.getElementById('commit-status');
+            const tape = document.getElementById('tape-line');
+            const tag = document.getElementById('shipping-tag');
+            const tagText = document.getElementById('tag-msg-text');
+
+            box.className = "w-32 h-32 bg-amber-700 rounded-xl flex flex-col items-center justify-center shadow-md relative scale-105 transition duration-300";
+            tape.classList.remove('hidden');
+            tag.classList.remove('hidden');
+            tagText.innerText = msg;
+            
+            status.innerHTML = '<span class="text-emerald-600 font-bold">🎉 封印＆荷札貼付完了！（コミット確定）</span>';
+            input.disabled = true;
+
+            showToast("荷札を貼って、ローカル倉庫に保存完了！");
+        }
+
+        function resetCommitSimulation() {
+            isCommitted = false;
+            renderSlide(currentSlideIndex);
+        }
+
+        // スライド8：プッシュ発送シミュレーション
+        function executePush() {
+            if (isPushed) return;
+
+            isPushed = true;
+            const truck = document.getElementById('delivery-truck');
+            const status = document.getElementById('push-status');
+            const btn = document.getElementById('btn-push-action');
+            const github = document.getElementById('github-hq');
+
+            truck.className = "absolute top-2 z-10 animate-truck";
+            status.innerHTML = "🚚 トラックがインターネットを快走して、配送しています...";
+            btn.disabled = true;
+            btn.innerHTML = "配送中...";
+
+            // 3秒後に配送完了演出
+            setTimeout(() => {
+                if (currentSlideIndex === 7) { // ユーザーが別のスライドへ進んでいない場合のみDOM操作
+                    status.innerHTML = '<span class="text-emerald-600 font-bold font-serif text-sm">🎉 発送完了！GitHub中央倉庫に保存されました！</span>';
+                    btn.className = "bg-emerald-600 text-white font-bold px-6 py-2 rounded-full cursor-not-allowed text-xs shadow-md pointer-events-none";
+                    btn.innerHTML = "発送済み";
+                    github.className = "w-14 h-14 bg-emerald-600 text-white rounded-xl flex flex-col items-center justify-center shadow-lg transform scale-110 duration-500";
+                    showToast("GitHubに無事届きました！");
+                }
+            }, 3000);
+        }
+
+        function resetPushSimulation() {
+            isPushed = false;
+            renderSlide(currentSlideIndex);
+        }
+
+        // スライド9：ブランチ分岐シミュレーション
+        function executeBranch() {
+            if (isBranched) return;
+
+            isBranched = true;
+            const line = document.getElementById('branch-line');
+            const node1 = document.getElementById('branch-node-1');
+            const node2 = document.getElementById('branch-node-2');
+            const text = document.getElementById('branch-text');
+            const status = document.getElementById('branch-status');
+            const btn = document.getElementById('btn-branch-action');
+
+            line.classList.remove('hidden');
+            node1.classList.remove('hidden');
+            node2.classList.remove('hidden');
+            text.classList.remove('hidden');
+
+            setTimeout(() => {
+                line.className = "absolute left-28 right-12 top-20 h-1 bg-amber-500 rounded block opacity-100 transition-all duration-500";
+                node1.className = "absolute left-44 top-18 w-5 h-5 bg-amber-500 rounded-full border-2 border-white flex items-center justify-center text-[8px] text-white font-bold shadow block opacity-100 transition-all duration-500";
+                node2.className = "absolute right-12 top-18 w-5 h-5 bg-amber-500 rounded-full border-2 border-white flex items-center justify-center text-[8px] text-white font-bold shadow block opacity-100 transition-all duration-500";
+                text.className = "absolute left-28 top-24 text-[9px] text-amber-600 font-bold block opacity-100 transition-all duration-500";
+            }, 50);
+
+            status.innerHTML = '<span class="text-amber-600 font-bold animate-pulse">🌿 パラレルワールド（new-feature）が分岐されました！</span>';
+            btn.className = "bg-amber-600 text-white font-bold px-5 py-2 rounded-lg cursor-not-allowed text-xs shadow pointer-events-none";
+            btn.innerHTML = "ブランチ分岐完了！";
+
+            showToast("新しい作業用の机（ブランチ）を用意しました！");
+        }
+
+        function resetBranchSimulation() {
+            isBranched = false;
+            renderSlide(currentSlideIndex);
+        }
+    </script>
+</body>
+</html>
