@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Windowsで始めるGit/GitHub超入門 - セットアップ & SSHキー連携ガイド</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Noto Sans JP & Space Grotesk (for modern accents) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Noto Sans JP', 'sans-serif'],
+            display: ['Space Grotesk', 'Noto Sans JP', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              bg: '#F8F9FA',      // 柔らかいオフホワイト
+              text: '#1F2328',    // 信頼感のあるダークスレート
+              card: '#FFFFFF',    // カード用ピュアホワイト
+              orange: '#E04E39',  // Gitオレンジ
+              green: '#1A8754',   // 成功・安全のミントグリーン
+              blue: '#0969DA',    // 情報・リンクのブルー
+              border: '#E1E4E8',  // ソフトな枠線
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* 滑らかなスライド切り替えアニメーション */
+    .slide-container {
+      perspective: 1000px;
+    }
+    .slide-card {
+      transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+    .slide-hidden-left {
+      opacity: 0;
+      transform: translateX(-50px) rotateY(-5deg);
+      pointer-events: none;
+      position: absolute;
+    }
+    .slide-hidden-right {
+      opacity: 0;
+      transform: translateX(50px) rotateY(5deg);
+      pointer-events: none;
+      position: absolute;
+    }
+    .slide-active {
+      opacity: 1;
+      transform: translateX(0) rotateY(0deg);
+      z-index: 10;
+    }
+    /* スクロールバーの非表示 */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-brand-bg text-brand-text font-sans min-h-screen flex flex-col justify-between overflow-x-hidden antialiased selection:bg-brand-orange/20 selection:text-brand-orange">
+
+  <!-- ヘッダー -->
+  <header class="w-full px-6 py-4 flex justify-between items-center border-b border-brand-border bg-brand-card/80 backdrop-blur-md sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+      <div class="bg-brand-orange text-white rounded-lg p-2 flex items-center justify-center shadow-md">
+        <!-- Git Icon (SVG) -->
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+        </svg>
+      </div>
+      <div>
+        <span class="font-display font-bold tracking-tight text-lg text-brand-text">Git & GitHub Setup</span>
+        <span class="text-xs bg-brand-orange/10 text-brand-orange font-bold px-2 py-0.5 rounded ml-2">For Windows</span>
+      </div>
+    </div>
+    <div class="text-xs text-slate-400 font-display hidden sm:block">
+      Keyboard Navigation: <kbd class="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded shadow-sm text-slate-600">←</kbd> / <kbd class="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded shadow-sm text-slate-600">→</kbd> or Space
+    </div>
+  </header>
+
+  <!-- メインコンテンツ (スライド表示領域) -->
+  <main class="flex-grow flex items-center justify-center p-4 md:p-8">
+    <div class="w-full max-w-4xl relative min-h-[580px] flex items-center justify-center slide-container">
+
+      <!-- スライド 1: タイトル -->
+      <div class="slide-card slide-active w-full bg-brand-card rounded-2xl border border-brand-border p-8 md:p-12 shadow-xl flex flex-col justify-between min-h-[540px]">
+        <div class="space-y-6">
+          <div class="inline-flex items-center gap-2 px-3 py-1 bg-brand-orange/10 rounded-full text-brand-orange text-sm font-bold">
+            <span class="w-2 h-2 rounded-full bg-brand-orange animate-pulse"></span>
+            完全初心者向けスライド
+          </div>
+          <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight leading-tight text-slate-900">
+            Windowsで始める<br>
+            <span class="text-brand-orange">Git & GitHub</span> 超入門
+          </h1>
+          <p class="text-lg text-slate-600 max-w-2xl leading-relaxed">
+            プログラミング経験が少なくても大丈夫！「ファイルのカメラ（Git）」と「ネット上の美術館（GitHub）」を連携させて、最初の一歩である<strong class="text-slate-900">「SSHキー連携」</strong>までを最も丁寧に解説します。
+          </p>
+        </div>
+        <div class="flex flex-wrap gap-4 items-center justify-between border-t border-brand-border pt-6 mt-8">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600">Win</div>
+            <div>
+              <p class="text-xs text-slate-400 font-medium">対象OS</p>
+              <p class="text-sm font-semibold text-slate-700">Windows 10 / 11 専用</p>
+            </div>
+          </div>
+          <button onclick="nextSlide()" class="bg-brand-orange hover:bg-brand-orange/90 text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-brand-orange/20 transition-all transform hover:-translate-y-0.5 flex items-center gap-2">
+            スライドを始める
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- スライド 2: Git & GitHubとは？ -->
+      <div class="slide-card slide-hidden-right w-full bg-brand-card rounded-2xl border border-brand-border p-8 md:p-12 shadow-xl flex flex-col justify-between min-h-[540px]">
+        <div>
+          <div class="text-xs font-bold text-brand-orange uppercase tracking-wider mb-2">Introduction</div>
+          <h2 class="text-2xl md:text-3xl font-extrabold mb-6">Git と GitHub の違い</h2>
+          
+          <div class="grid md:grid-cols-2 gap-6 mt-4">
+            <!-- Git カード -->
+            <div class="bg-brand-bg/50 border border-brand-border/80 rounded-xl p-6 relative overflow-hidden group hover:border-brand-orange/30 transition-colors">
+              <div class="absolute right-4 top-4 text-brand-orange/10 font-display text-7xl font-bold select-none group-hover:text-brand-orange/20 transition-colors">Git</div>
+              <div class="w-10 h-10 rounded-lg bg-brand-orange/10 text-brand-orange flex items-center justify-center mb-4">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path></svg>
+              </div>
+              <h3 class="font-bold text-lg mb-2 flex items-center gap-2">
+                Git <span class="text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded">PCの中で動く</span>
+              </h3>
+              <p class="text-sm text-slate-600 leading-relaxed">
+                あなたのパソコンの中で、ファイルの変更履歴を細かく記録する<strong class="text-slate-900">「超高性能なカメラ」</strong>です。何か間違えても、過去の写真（コミット）にいつでも巻き戻せます。
+              </p>
+            </div>
+
+            <!-- GitHub カード -->
+            <div class="bg-brand-bg/50 border border-brand-border/80 rounded-xl p-6 relative overflow-hidden group hover:border-brand-blue/30 transition-colors">
+              <div class="absolute right-4 top-4 text-brand-blue/10 font-display text-7xl font-bold select-none group-hover:text-brand-blue/20 transition-colors">Hub</div>
+              <div class="w-10 h-10 rounded-lg bg-brand-blue/10 text-brand-blue flex items-center justify-center mb-4">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+              </div>
+              <h3 class="font-bold text-lg mb-2 flex items-center gap-2">
+                GitHub <span class="text-xs bg-brand-blue/10 text-brand-blue px-2 py-0.5 rounded">ネット上のサービス</span>
+              </h3>
+              <p class="text-sm text-slate-600 leading-relaxed">
+                ネット上にある、みんなで写真（Gitの履歴）を保管・公開する<strong class="text-slate-900">「巨大な美術館」</strong>です。ここに作品を預けることで、全世界へ公開したり、仲間と共同開発できます。
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="border-t border-brand-border pt-4 text-sm text-slate-500 flex items-center gap-2">
+          <span>💡 <strong>POINT:</strong> 手元のPCで「Git」を使い歴史を作り、それを「GitHub」へ送る（プッシュする）ことで公開します。</span>
+        </div>
+      </div>
+
+      <!-- スライド 3: Step 1: GitHubのアカウント作成（前編） -->
+      <div class="slide-card slide-hidden-right w-full bg-brand-card rounded-2xl border border-brand-border p-8 md:p-12 shadow-xl flex flex-col justify-between min-h-[540px]">
+        <div>
+          <div class="text-xs font-bold text-brand-orange uppercase tracking-wider mb-2">Step 1 (Part 1/2)</div>
+          <h2 class="text-2xl md:text-3xl font-extrabold mb-4">GitHub アカウントの作成：スタート</h2>
+          <p class="text-sm text-slate-500 mb-6">まずは、ネット上の美術館（GitHub）のアカウントを非常に丁寧に作成していきます。</p>
+
+          <div class="space-y-4">
+            <div class="flex items-start gap-4">
+              <div class="w-7 h-7 rounded-full bg-brand-orange/10 text-brand-orange flex items-center justify-center font-bold text-sm shrink-0 mt-0.5">1</div>
+              <div class="space-y-1">
+                <h4 class="font-bold text-slate-800">公式サイトにアクセスする</h4>
+                <p class="text-sm text-slate-600">
+                  ブラウザで <a href="https://github.com/" target="_blank" class="text-brand-blue hover:underline font-semibold inline-flex items-center gap-0.5">github.com <svg class="w-3.5 h-3.5 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg></a> にアクセスします。
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-4">
+              <div class="w-7 h-7 rounded-full bg-brand-orange/10 text-brand-orange flex items-center justify-center font-bold text-sm shrink-0 mt-0.5">2</div>
+              <div class="space-y-1">
+                <h4 class="font-bold text-slate-800">「Sign up」ボタンをクリック</h4>
+                <p class="text-sm text-slate-600">
+                  画面の右上、または中央にある、オレンジや白、緑で目立つ <span class="bg-slate-900 text-white font-bold px-2 py-1 rounded text-xs">Sign up for GitHub</span> ボタンを押します。
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-4">
+              <div class="w-7 h-7 rounded-full bg-brand-orange/10 text-brand-orange flex items-center justify-center font-bold text-sm shrink-0 mt-0.5">3</div>
+              <div class="space-y-1">
+                <h4 class="font-bold text-slate-800">SFのような演出に合わせて情報を入力する</h4>
+                <p class="text-sm text-slate-600">
+                  宇宙のような背景の中、チャット形式で順番に尋ねられます：
+                </p>
+                <ul class="list-disc list-inside text-xs text-slate-500 pl-2 space-y-1 mt-1">
+                  <li><strong>Email address:</strong> 普段使っているメールアドレスを入力 ➔ <kbd class="px-1 bg-slate-100 rounded border">Continue</kbd></li>
+                  <li><strong>Password:</strong> 強固なパスワード（英数字、記号）を設定 ➔ <kbd class="px-1 bg-slate-100 rounded border">Continue</kbd></li>
+                  <li><strong>Username:</strong> 希望するユーザー名（半角英数字と一部の記号のみ）を入力 ➔ <kbd class="px-1 bg-slate-100 rounded border">Continue</kbd></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="border-t border-brand-border pt-4 text-xs text-slate-400">
+          ⚠️ <strong>注意:</strong> ユーザー名（Username）は、あなたのGitHubのURL（例: github.com/ユーザー名）になるため、本名や恥ずかしくない簡潔な英語がおすすめです。
+        </div>
+      </div>
+
+      <!-- スライド 4: Step 1: GitHubのアカウント作成（後編） -->
+      <div class="slide-card slide-hidden-right w-full bg-brand-card rounded-2xl border border-brand-border p-8 md:p-12 shadow-xl flex flex-col justify-between min-h-[540px]">
+        <div>
+          <div class="text-xs font-bold text-brand-orange uppercase tracking-wider mb-2">Step 1 (Part 2/2)</div>
+          <h2 class="text-2xl md:text-3xl font-extrabold mb-4">GitHub アカウントの作成：完了</h2>
+          <p class="text-sm text-slate-500 mb-6">入力を進めて、アカウント作成プロセスを最後まで完了させます。</p>
+
+          <div class="space-y-4">
+            <div class="flex items-start gap-4">
+              <div class="w-7 h-7 rounded-full bg-brand-orange/10 text-brand-orange flex items-center justify-center font-bold text-sm shrink-0 mt-0.5">4</div>
+              <div class="space-y-1">
+                <h4 class="font-bold text-slate-800">Email Preferences (お知らせ配信の可否)</h4>
+                <p class="text-sm text-slate-600">
+                  「GitHubからニュースや更新情報を受け取りますか？」と聞かれます。<strong class="text-slate-800">不要なら「n」、受け取るなら「y」</strong>と入力して <kbd class="px-1 bg-slate-100 rounded border">Continue</kbd> をクリックします。
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-4">
+              <div class="w-7 h-7 rounded-full bg-brand-orange/10 text-brand-orange flex items-center justify-center font-bold text-sm shrink-0 mt-0.5">5</div>
+              <div class="space-y-1">
+                <h4 class="font-bold text-slate-800">Spam Verification (パズルの突破)</h4>
+                <p class="text-sm text-slate-600">
+                  「あなたがロボットでないことを証明してください」とパズル（同じ絵柄を選ぶなど）が出題されるので、指示通りにクリアします。
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-4">
+              <div class="w-7 h-7 rounded-full bg-brand-orange/10 text-brand-orange flex items-center justify-center font-bold text-sm shrink-0 mt-0.5">6</div>
+              <div class="space-y-1">
+                <h4 class="font-bold text-slate-800">認証コードの入力 ➔ 完了！</h4>
+                <p class="text-sm text-slate-600">
+                  登録したメールアドレス宛に <strong class="text-brand-orange">8桁のワンタイムコード</strong> が届きます。それをブラウザの画面に入力すれば、無事にアカウント作成は完了です！
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="border-t border-brand-border pt-4 text-xs text-brand-green bg-brand-green/5 p-3 rounded-lg flex items-center gap-2">
+          <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <strong>成功:</strong> これで「ネット上の美術館（GitHub）」にあなただけの展示スペースが確保されました！
+        </div>
+      </div>
+
+      <!-- スライド 5: Step 2: Gitのダウンロード -->
+      <div class="slide-card slide-hidden-right w-full bg-brand-card rounded-2xl border border-brand-border p-8 md:p-12 shadow-xl flex flex-col justify-between min-h-[540px]">
+        <div>
+          <div class="text-xs font-bold text-brand-orange uppercase tracking-wider mb-2">Step 2 (Part 1/2)</div>
+          <h2 class="text-2xl md:text-3xl font-extrabold mb-4">WindowsにGitを入れよう（入手編）</h2>
+          <p class="text-sm text-slate-500 mb-6">次に、手元のPCに歴史を保存するカメラ（Git本体）をダウンロードします。</p>
+
+          <div class="space-y-6">
+            <div class="bg-brand-bg border border-brand-border rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <span class="text-xs font-bold text-slate-400 font-display block">GIT FOR WINDOWS OFFICIAL</span>
+                <span class="font-extrabold text-slate-800 text-lg">Git for Windows</span>
+              </div>
+              <a href="https://gitforwindows.org/" target="_blank" class="bg-brand-orange hover:bg-brand-orange/95 text-white font-bold px-5 py-2.5 rounded-lg shadow-md transition-colors text-sm flex items-center gap-2 shrink-0">
+                公式サイトへアクセス
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+              </a>
+            </div>
+
+            <div class="space-y-3">
+              <h4 class="font-bold text-slate-800">ダウンロード手順</h4>
+              <ol class="list-decimal list-inside text-sm text-slate-600 space-y-2 pl-2">
+                <li>上記公式サイトを開き、目立つ「<strong class="text-slate-800">Download</strong>」ボタンをクリックします。</li>
+                <li>お使いのPCに適したインストーラ（通常は <span class="bg-slate-100 px-1.5 py-0.5 rounded border font-mono text-xs">64-bit Git for Windows Setup</span>）のダウンロードが自動で始まります。</li>
+                <li>ダウンロードされたファイル（例：<code class="text-brand-orange font-mono text-xs bg-slate-100 px-1 py-0.5 rounded">Git-2.xx.x-64-bit.exe</code>）を確認します。</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+        <div class="border-t border-brand-border pt-4 text-xs text-slate-400">
+          💡 <strong>豆知識:</strong> Windows用のGitには、超初心者がもっとも助けられるツール「Git Bash（擬似的なコマンドライン端末）」が最初から同梱されています。
+        </div>
+      </div>
+
+      <!-- スライド 6: Step 2: Gitのインストール -->
+      <div class="slide-card slide-hidden-right w-full bg-brand-card rounded-2xl border border-brand-border p-8 md:p-12 shadow-xl flex flex-col justify-between min-h-[540px]">
+        <div>
+          <div class="text-xs font-bold text-brand-orange uppercase tracking-wider mb-2">Step 2 (Part 2/2)</div>
+          <h2 class="text-2xl md:text-3xl font-extrabold mb-4">WindowsにGitを入れよう（インストール編）</h2>
+          <p class="text-sm text-slate-500 mb-6">インストーラを動かしてPCに導入します。迷いがちな設定について。</p>
+
+          <div class="space-y-4">
+            <div class="bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-4 flex gap-3 items-start">
+              <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+              <div class="text-sm">
+                <span class="font-extrabold block">不安を解消：基本は全て「Next」連打でOK！</span>
+                設定項目が10画面以上現れ、英語で色々と聞かれますが、現在、Gitの初期値（デフォルト設定）は十分に洗練されています。すべて <kbd class="px-1.5 py-0.5 bg-white border rounded shadow-sm text-xs">Next &gt;</kbd> を押し続ければ最良の構成になります。
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <h4 class="font-bold text-slate-800 text-sm">💡 念のため確認しておくと良いチェックポイント：</h4>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div class="p-3 bg-brand-bg rounded-lg border border-brand-border">
+                  <span class="font-bold text-brand-orange block mb-1">デフォルトのエディタ設定</span>
+                  「Choosing the default editor used by Git」では、初期のまま（Vimなど）か、お使いの <strong class="text-slate-800">VS Code</strong> などへ安全に変更可能です。
+                </div>
+                <div class="p-3 bg-brand-bg rounded-lg border border-brand-border">
+                  <span class="font-bold text-brand-orange block mb-1">フォルダ内の改行コード自動変換</span>
+                  「Configuring the line ending conversions」では、最も推奨される <span class="bg-white px-1 border rounded text-slate-600">Checkout Windows-style, commit Unix-style line endings</span> が選ばれていることを確認。
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="border-t border-brand-border pt-4 text-xs text-slate-400">
+          🎉 インストールが完了したら、スタートメニューに「<strong class="text-slate-800">Git Bash</strong>」というアプリが入っていることを確認してください。
+        </div>
+      </div>
+
+      <!-- スライド 7: Step 3: Gitの初期設定 -->
+      <div class="slide-card slide-hidden-right w-full bg-brand-card rounded-2xl border border-brand-border p-8 md:p-12 shadow-xl flex flex-col justify-between min-h-[540px]">
+        <div>
+          <div class="text-xs font-bold text-brand-orange uppercase tracking-wider mb-2">Step 3</div>
+          <h2 class="text-2xl md:text-3xl font-extrabold mb-4">手元PCの初期設定（名前とメアド登録）</h2>
+          <p class="text-sm text-slate-500 mb-6">インストールした「Git Bash」を起動し、歴史を記録する際の署名（あなたの名前とアドレス）を一度だけ登録します。</p>
+
+          <div class="space-y-4">
+            <div class="space-y-2">
+              <div class="flex justify-between items-center">
+                <label class="text-xs font-bold text-slate-500 font-display">COMMAND 1: 名前の登録</label>
+                <button onclick="copyCommand('config-name')" class="text-xs text-brand-blue hover:text-brand-blue/80 flex items-center gap-1 font-bold">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                  コピー
+                </button>
+              </div>
+              <div class="bg-brand-text text-white font-mono p-3 rounded-lg text-xs md:text-sm shadow-inner relative">
+                <span class="text-slate-500 select-none">$</span> <span id="config-name">git config --global user.name "YourName"</span>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <div class="flex justify-between items-center">
+                <label class="text-xs font-bold text-slate-500 font-display">COMMAND 2: メールアドレスの登録</label>
+                <button onclick="copyCommand('config-email')" class="text-xs text-brand-blue hover:text-brand-blue/80 flex items-center gap-1 font-bold">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                  コピー
+                </button>
+              </div>
+              <div class="bg-brand-text text-white font-mono p-3 rounded-lg text-xs md:text-sm shadow-inner relative">
+                <span class="text-slate-500 select-none">$</span> <span id="config-email">git config --global user.email "your_email@example.com"</span>
+              </div>
+            </div>
+
+            <div class="text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border border-brand-border">
+              💡 <strong>ヒント:</strong> <code>"YourName"</code> や <code>"your_email@example.com"</code> は、ご自身の情報（名前は半角ローマ字推奨、メアドはGitHub登録で使用したもの）に書き換えて実行してください。
+            </div>
+          </div>
+        </div>
+        <div class="border-t border-brand-border pt-4 text-xs text-slate-400">
+          ※ この設定を行わないと、今後ファイルのコミット（記録）をする際に「君は誰？」とGitから叱られてしまいます。
+        </div>
+      </div>
+
+      <!-- スライド 8: Step 4: SSHキーって何？ -->
+      <div class="slide-card slide-hidden-right w-full bg-brand-card rounded-2xl border border-brand-border p-8 md:p-12 shadow-xl flex flex-col justify-between min-h-[540px]">
+        <div>
+          <div class="text-xs font-bold text-brand-orange uppercase tracking-wider mb-2">Step 4 (Part 1/4)</div>
+          <h2 class="text-2xl md:text-3xl font-extrabold mb-4">SSHキーってなに？（やさしい図解）</h2>
+          <p class="text-sm text-slate-500 mb-6">手元PCからGitHubへ安全に作品を運ぶための「秘密の合い鍵」の概念を解説します。</p>
+
+          <div class="grid md:grid-cols-2 gap-6 items-center mt-4">
+            <!-- 秘密鍵 -->
+            <div class="p-5 border-2 border-dashed border-brand-orange/30 bg-brand-orange/5 rounded-xl text-center space-y-2">
+              <div class="text-4xl">🔑</div>
+              <h4 class="font-extrabold text-brand-orange text-base">秘密鍵（プライベートキー）</h4>
+              <p class="text-xs text-slate-400 font-mono">id_ed25519</p>
+              <p class="text-xs text-slate-600 leading-relaxed">
+                あなた自身のPCから<strong class="text-slate-900">絶対に持ち出してはいけない物理的なカギ</strong>。誰にも見せてはいけません。
+              </p>
+            </div>
+
+            <!-- 公開鍵 -->
+            <div class="p-5 border-2 border-dashed border-brand-green/30 bg-brand-green/5 rounded-xl text-center space-y-2">
+              <div class="text-4xl">🔒</div>
+              <h4 class="font-extrabold text-brand-green text-base">公開鍵（パブリックキー）</h4>
+              <p class="text-xs text-slate-400 font-mono">id_ed25519.pub</p>
+              <p class="text-xs text-slate-600 leading-relaxed">
+                GitHubに設置する<strong class="text-slate-900">デジタルな電子ロック（鍵穴）</strong>。誰に見られても全く問題ありません。
+              </p>
+            </div>
+          </div>
+
+          <div class="mt-6 text-sm text-slate-600 text-center bg-slate-50 py-3 px-4 rounded-lg border border-brand-border">
+            「手元の<strong>秘密鍵</strong>」と「GitHubに登録した<strong>公開鍵</strong>」がピッタリ合致した時だけ、パスワードなしで一瞬で安全に通信が行えます。
+          </div>
+        </div>
+        <div class="border-t border-brand-border pt-4 text-xs text-slate-400">
+          💡 <strong>安心：</strong> この設定を終えれば、毎回ログインパスワードを打ち込む面倒から永久に解放されます。
+        </div>
+      </div>
+
+      <!-- スライド 9: Step 4: SSHキーの作成 -->
+      <div class="slide-card slide-hidden-right w-full bg-brand-card rounded-2xl border border-brand-border p-8 md:p-12 shadow-xl flex flex-col justify-between min-h-[540px]">
+        <div>
+          <div class="text-xs font-bold text-brand-orange uppercase tracking-wider mb-2">Step 4 (Part 2/4)</div>
+          <h2 class="text-2xl md:text-3xl font-extrabold mb-4">SSHキーを作成する（Git Bashにて）</h2>
+          <p class="text-sm text-slate-500 mb-6">Git Bashを使って、PCの中に最先端の安全な鍵（ed25519暗号）を作成しましょう。</p>
+
+          <div class="space-y-4">
+            <div class="space-y-2">
+              <div class="flex justify-between items-center">
+                <label class="text-xs font-bold text-slate-500 font-display">🔑 鍵を生成するコマンド</label>
+                <button onclick="copyCommand('keygen-cmd')" class="text-xs text-brand-blue hover:text-brand-blue/80 flex items-center gap-1 font-bold">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                  コピー
+                </button>
+              </div>
+              <div class="bg-brand-text text-white font-mono p-3 rounded-lg text-xs md:text-sm shadow-inner">
+                <span class="text-slate-500 select-none">$</span> <span id="keygen-cmd">ssh-keygen -t ed25519 -C "your_email@example.com"</span>
+              </div>
+            </div>
+
+            <div class="bg-brand-bg rounded-xl p-4 border border-brand-border space-y-3">
+              <h4 class="font-extrabold text-sm text-slate-800">実行中に聞かれること（迷いやすい3ステップ）：</h4>
+              <div class="space-y-2 text-xs text-slate-600">
+                <div class="flex gap-2">
+                  <span class="font-bold text-brand-orange">1.</span>
+                  <span><code class="bg-white px-1 py-0.5 rounded border font-mono">Enter file in which to save the key...</code> ➔ 鍵の保存先を聞かれます。<strong class="text-slate-900">何も書かずに「Enterキー」</strong>を押します。</span>
+                </div>
+                <div class="flex gap-2">
+                  <span class="font-bold text-brand-orange">2.</span>
+                  <span><code class="bg-white px-1 py-0.5 rounded border font-mono">Enter passphrase...</code> ➔ 鍵用の追加暗号コード。基本は<strong class="text-slate-900">何も入力せずに「Enterキー」</strong>でOKです。</span>
+                </div>
+                <div class="flex gap-2">
+                  <span class="font-bold text-brand-orange">3.</span>
+                  <span><code class="bg-white px-1 py-0.5 rounded border font-mono">Enter same passphrase again...</code> ➔ 確認のため、<strong class="text-slate-900">もう一度「Enterキー」</strong>を押します。</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="border-t border-brand-border pt-4 text-xs text-slate-400">
+          🎉 画面にアスキーアート（記号の絵）が現れれば、あなたのPC内に最強の鍵ペア（秘密鍵と公開鍵）が無事に生成されました！
+        </div>
+      </div>
+
+      <!-- スライド 10: Step 4: SSHキーのGitHub登録 -->
+      <div class="slide-card slide-hidden-right w-full bg-brand-card rounded-2xl border border-brand-border p-8 md:p-12 shadow-xl flex flex-col justify-between min-h-[540px]">
+        <div>
+          <div class="text-xs font-bold text-brand-orange uppercase tracking-wider mb-2">Step 4 (Part 3/4)</div>
+          <h2 class="text-2xl md:text-3xl font-extrabold mb-4">公開鍵をGitHubに登録する</h2>
+          <p class="text-sm text-slate-500 mb-6">作った「鍵穴（公開鍵）」をコピーして、GitHubに設置しましょう。</p>
+
+          <div class="space-y-4">
+            <div class="space-y-2">
+              <div class="flex justify-between items-center">
+                <label class="text-xs font-bold text-slate-500 font-display">✂️ クリップボードに一発コピーする超便利コマンド (Windows)</label>
+                <button onclick="copyCommand('copy-key-cmd')" class="text-xs text-brand-blue hover:text-brand-blue/80 flex items-center gap-1 font-bold">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                  コピー
+                </button>
+              </div>
+              <div class="bg-brand-text text-white font-mono p-3 rounded-lg text-xs md:text-sm shadow-inner">
+                <span class="text-slate-500 select-none">$</span> <span id="copy-key-cmd">clip &lt; ~/.ssh/id_ed25519.pub</span>
+              </div>
+            </div>
+
+            <div class="space-y-2 text-sm text-slate-600 pl-2">
+              <h4 class="font-bold text-slate-800">GitHubの登録手順</h4>
+              <ol class="list-decimal list-inside space-y-1 text-xs">
+                <li>上記のコピーコマンドを実行します（一瞬で公開鍵がコピーされます）。</li>
+                <li>GitHubを開き、右上の「自分のアイコン」 ➔ <strong class="text-slate-800">Settings</strong> を開きます。</li>
+                <li>左側メニューの「<strong class="text-brand-orange">SSH and GPG keys</strong>」を選択します。</li>
+                <li>「<strong class="text-slate-900">New SSH key</strong>」ボタン（緑色）をクリック。</li>
+                <li><strong>Title:</strong> には何のPCの鍵かわかる名前（例: <code class="bg-slate-100 px-1 border rounded">My Windows PC</code>）を入力。</li>
+                <li><strong>Key:</strong> の入力エリアに、キーボードの <kbd class="px-1.5 py-0.5 bg-slate-100 rounded border">Ctrl</kbd> + <kbd class="px-1.5 py-0.5 bg-slate-100 rounded border">V</kbd> を押して貼り付けます。</li>
+                <li>緑色の「<strong class="text-slate-900">Add SSH key</strong>」ボタンをクリック！</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+        <div class="border-t border-brand-border pt-4 text-xs text-slate-400">
+          ⚠️ <strong>注意：</strong> 貼り付けるキーは <code>ssh-ed25519 ...</code> で始まる文字列です。絶対に間違えないようにしましょう。
+        </div>
+      </div>
+
+      <!-- スライド 11: Step 4: 接続テスト -->
+      <div class="slide-card slide-hidden-right w-full bg-brand-card rounded-2xl border border-brand-border p-8 md:p-12 shadow-xl flex flex-col justify-between min-h-[540px]">
+        <div>
+          <div class="text-xs font-bold text-brand-orange uppercase tracking-wider mb-2">Step 4 (Part 4/4)</div>
+          <h2 class="text-2xl md:text-3xl font-extrabold mb-4">繋がったかテストしてみよう！</h2>
+          <p class="text-sm text-slate-500 mb-6">全ての準備が整いました。手元のPCからGitHubに正常にアクセスできるかを検証します。</p>
+
+          <div class="space-y-4">
+            <div class="space-y-2">
+              <div class="flex justify-between items-center">
+                <label class="text-xs font-bold text-slate-500 font-display">📡 テスト用コマンド（Git Bashで実行）</label>
+                <button onclick="copyCommand('test-ssh-cmd')" class="text-xs text-brand-blue hover:text-brand-blue/80 flex items-center gap-1 font-bold">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                  コピー
+                </button>
+              </div>
+              <div class="bg-brand-text text-white font-mono p-3 rounded-lg text-xs md:text-sm shadow-inner">
+                <span class="text-slate-500 select-none">$</span> <span id="test-ssh-cmd">ssh -T git@github.com</span>
+              </div>
+            </div>
+
+            <div class="bg-brand-bg rounded-xl p-4 border border-brand-border space-y-2 text-xs text-slate-600">
+              <h4 class="font-bold text-slate-800">⚠️ 初回接続時のみ表示される警告メッセージ：</h4>
+              <p>
+                「接続先の正真性が確認できませんが、続行しますか？」と聞かれます。
+              </p>
+              <div class="bg-slate-200 p-2 rounded font-mono text-[11px] text-slate-700">
+                Are you sure you want to continue connecting (yes/no/[fingerprint])?
+              </div>
+              <p>
+                ひるまずに <strong class="text-brand-orange">「yes」と入力</strong> して Enter を押してください。
+              </p>
+            </div>
+
+            <div class="p-3 bg-brand-green/10 text-brand-green rounded-lg border border-brand-green/20 text-xs">
+              <span class="font-extrabold block mb-1">🎉 以下のメッセージが出れば大成功です！</span>
+              <code class="font-mono text-[11px] font-semibold text-slate-700">Hi [Your Username]! You've successfully authenticated...</code>
+            </div>
+          </div>
+        </div>
+        <div class="border-t border-brand-border pt-4 text-xs text-slate-400">
+          「無事に認証に成功しました。ただしシェルアクセスは提供していません」という意味なので、大成功です！
+        </div>
+      </div>
+
+      <!-- スライド 12: コラム①: GitHub Desktop -->
+      <div class="slide-card slide-hidden-right w-full bg-brand-card rounded-2xl border border-brand-border p-8 md:p-12 shadow-xl flex flex-col justify-between min-h-[540px]">
+        <div>
+          <div class="text-xs font-bold text-brand-orange uppercase tracking-wider mb-2">Column 1</div>
+          <h2 class="text-2xl md:text-3xl font-extrabold mb-4">コラム: GitHub Desktop アプリの紹介</h2>
+          <p class="text-sm text-slate-500 mb-6">「どうしてもキーボードでの黒い画面（コマンド）の操作に慣れない…」という初心者の方への究極の救世主です。</p>
+
+          <div class="grid md:grid-cols-2 gap-6 items-center mt-4">
+            <div class="space-y-3">
+              <h4 class="font-extrabold text-slate-800">GitHub Desktop とは？</h4>
+              <p class="text-sm text-slate-600 leading-relaxed">
+                GitHub社が公式に開発している、<strong class="text-slate-900">すべてマウスと視覚的な画面（GUI）</strong>でGitを操作できる便利なWindowsアプリです。
+              </p>
+              <ul class="list-disc list-inside text-xs text-slate-500 space-y-1 pl-2">
+                <li>変更された箇所が色分けされて美しく並ぶ</li>
+                <li>ボタンをポチッと押すだけでGitHubへ送信可能</li>
+                <li>コマンドの間違いによるデータ消失を完全に回避</li>
+              </ul>
+            </div>
+
+            <div class="bg-brand-bg p-5 rounded-2xl border border-brand-border text-center space-y-4">
+              <div class="text-4xl">🖥️</div>
+              <div class="space-y-1">
+                <span class="text-xs font-bold text-slate-400 font-display block">OFFICIAL GUI APP</span>
+                <span class="font-extrabold text-slate-800">GitHub Desktop</span>
+              </div>
+              <a href="https://desktop.github.com/" target="_blank" class="inline-flex bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-4 py-2 rounded-lg transition-colors gap-1 items-center">
+                ダウンロードサイトへ
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+              </a>
+            </div>
+          </div>
+        </div>
+        <div class="border-t border-brand-border pt-4 text-xs text-slate-400">
+          💡 <strong>プロのアドバイス：</strong> 現場ではコマンドでの操作が好まれますが、慣れるまではGitHub Desktopをメインで使うのは非常に賢いアプローチです。
+        </div>
+      </div>
+
+      <!-- スライド 13: コラム②: GitHub モバイルアプリ -->
+      <div class="slide-card slide-hidden-right w-full bg-brand-card rounded-2xl border border-brand-border p-8 md:p-12 shadow-xl flex flex-col justify-between min-h-[540px]">
+        <div>
+          <div class="text-xs font-bold text-brand-orange uppercase tracking-wider mb-2">Column 2</div>
+          <h2 class="text-2xl md:text-3xl font-extrabold mb-4">コラム: GitHub モバイルアプリの勧め</h2>
+          <p class="text-sm text-slate-500 mb-6">通勤時間やちょっとしたスキマ時間にモチベーションを上げてくれる、スマートフォン向け公式アプリです。</p>
+
+          <div class="grid md:grid-cols-2 gap-6 mt-4">
+            <div class="p-5 bg-brand-bg rounded-2xl border border-brand-border flex flex-col justify-center items-center text-center space-y-3">
+              <div class="text-4xl">📱</div>
+              <h4 class="font-extrabold text-slate-800">スマホでGitHubを遊ぶ</h4>
+              <p class="text-xs text-slate-500 max-w-xs">
+                App Store や Google Play ストアで「GitHub」と検索すると入手できます（完全無料）。
+              </p>
+            </div>
+
+            <div class="space-y-4">
+              <h4 class="font-extrabold text-slate-800 text-sm">モバイルアプリの最高な使い道：</h4>
+              <div class="space-y-2 text-xs text-slate-600">
+                <div class="flex gap-2">
+                  <span class="text-brand-orange">✓</span>
+                  <span><strong>草（コミット履歴）のチェック：</strong> 自分の継続的な進捗（通称：草を生やす）を確認してニヤニヤできます。</span>
+                </div>
+                <div class="flex gap-2">
+                  <span class="text-brand-orange">✓</span>
+                  <span><strong>コードの閲覧：</strong> 他の人が書いた素晴らしいコードや、自分が過去に上げた作品をベッドの上で読書感覚で学べます。</span>
+                </div>
+                <div class="flex gap-2">
+                  <span class="text-brand-orange">✓</span>
+                  <span><strong>通知の管理：</strong> 将来、仲間と一緒に開発する際に、質問やコードレビューの通知を素早く処理できます。</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="border-t border-brand-border pt-4 text-xs text-slate-400">
+          📱 開発モチベーション維持には本当に最適なツールですので、ぜひ本日インストールしてみてください。
+        </div>
+      </div>
+
+      <!-- スライド 14: まとめ & 次のステップへ -->
+      <div class="slide-card slide-hidden-right w-full bg-brand-card rounded-2xl border border-brand-border p-8 md:p-12 shadow-xl flex flex-col justify-between min-h-[540px]">
+        <div class="space-y-6">
+          <div class="text-xs font-bold text-brand-green uppercase tracking-wider">Congratulations!</div>
+          <h2 class="text-3xl md:text-4xl font-extrabold text-slate-950">
+            おめでとうございます！<br>
+            セットアップが<span class="text-brand-green">完了</span>しました！
+          </h2>
+          <p class="text-slate-600 leading-relaxed text-sm">
+            これであなたのWindows PCは、「Git（履歴カメラ）」と「GitHub（世界最大の保管所）」がSSHという最高水準の安全なトンネルでしっかりと結びついた完全な開発マシンになりました。
+          </p>
+
+          <div class="bg-brand-bg rounded-xl p-4 border border-brand-border space-y-2">
+            <h4 class="font-bold text-slate-800 text-sm">🚀 次に行うこと（ステップ）：</h4>
+            <ol class="list-decimal list-inside text-xs text-slate-600 space-y-1">
+              <li>GitHub上で「<strong class="text-slate-800">New repository</strong>」（新しい公開部屋）を作る</li>
+              <li>手元のHTMLがあるフォルダで Git Bash を開き、<code class="bg-white px-1 border rounded">git init</code> を実行</li>
+              <li>ファイルをステージングしてコミットし、GitHubに指示されたコマンドでプッシュ（送信）する</li>
+            </ol>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-4 items-center justify-between border-t border-brand-border pt-6 mt-6">
+          <div class="text-xs text-slate-400">
+            素晴らしい未来の開発者ライフを！
+          </div>
+          <button onclick="goToSlide(0)" class="bg-slate-900 hover:bg-slate-800 text-white font-bold px-5 py-2.5 rounded-lg text-sm transition-colors shadow-md">
+            最初からもう一度読む
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- コピー成功トースト通知 (Alertの代わり) -->
+  <div id="toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs px-4 py-2.5 rounded-full shadow-lg opacity-0 pointer-events-none transition-all duration-300 transform translate-y-2 z-50 flex items-center gap-2">
+    <svg class="w-4 h-4 text-brand-green" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+    <span id="toast-message">コピーしました！</span>
+  </div>
+
+  <!-- フッター (スライドコントロール) -->
+  <footer class="w-full bg-brand-card border-t border-brand-border px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 sticky bottom-0 z-50">
+    <!-- スライド進捗インジケーター -->
+    <div class="flex items-center gap-4 w-full sm:w-auto">
+      <span class="text-xs text-slate-400 font-display font-bold shrink-0">
+        Slide <span id="current-slide-num" class="text-brand-text">1</span> of 14
+      </span>
+      <div class="w-full sm:w-48 bg-slate-100 h-2 rounded-full overflow-hidden relative border border-brand-border/30">
+        <div id="progress-bar" class="bg-brand-orange h-full rounded-full transition-all duration-300" style="width: 7.14%;"></div>
+      </div>
+    </div>
+
+    <!-- 前へ / 次へ ボタン -->
+    <div class="flex items-center gap-2">
+      <button onclick="prevSlide()" class="h-11 px-4 rounded-xl border border-brand-border bg-brand-card hover:bg-brand-bg text-slate-700 font-bold transition-all flex items-center gap-1 active:scale-95 touch-manipulation text-sm">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+        戻る
+      </button>
+      <button onclick="nextSlide()" class="h-11 px-6 rounded-xl bg-brand-orange hover:bg-brand-orange/90 text-white font-bold transition-all flex items-center gap-1 active:scale-95 touch-manipulation text-sm shadow-md shadow-brand-orange/10">
+        次へ
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+      </button>
+    </div>
+  </footer>
+
+  <!-- スライドショー制御スクリプト -->
+  <script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide-card');
+    const totalSlides = slides.length;
+    const progressBar = document.getElementById('progress-bar');
+    const currentSlideNum = document.getElementById('current-slide-num');
+
+    function updateSlides() {
+      slides.forEach((slide, idx) => {
+        slide.classList.remove('slide-active', 'slide-hidden-left', 'slide-hidden-right');
+        if (idx === currentSlide) {
+          slide.classList.add('slide-active');
+        } else if (idx < currentSlide) {
+          slide.classList.add('slide-hidden-left');
+        } else {
+          slide.classList.add('slide-hidden-right');
+        }
+      });
+
+      // フッター情報の更新
+      currentSlideNum.textContent = currentSlide + 1;
+      const percent = ((currentSlide + 1) / totalSlides) * 100;
+      progressBar.style.width = `${percent}%`;
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides - 1) {
+        currentSlide++;
+        updateSlides();
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 0) {
+        currentSlide--;
+        updateSlides();
+      }
+    }
+
+    function goToSlide(index) {
+      if (index >= 0 && index < totalSlides) {
+        currentSlide = index;
+        updateSlides();
+      }
+    }
+
+    // キーボードナビゲーションの追加
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') {
+        e.preventDefault(); // スペースキーによるスクロール防止
+        nextSlide();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        prevSlide();
+      }
+    });
+
+    // モバイル用簡易フリック（タッチ）検知
+    let startX = 0;
+    let endX = 0;
+    const threshold = 50;
+
+    document.addEventListener('touchstart', (e) => {
+      startX = e.changedTouches[0].screenX;
+    });
+
+    document.addEventListener('touchend', (e) => {
+      endX = e.changedTouches[0].screenX;
+      if (startX - endX > threshold) {
+        nextSlide(); // 左スワイプ（次へ）
+      } else if (endX - startX > threshold) {
+        prevSlide(); // 右スワイプ（前へ）
+      }
+    });
+
+    // コマンド一発コピー機能（iframe対策のため document.execCommand 使用）
+    function copyCommand(elementId) {
+      const element = document.getElementById(elementId);
+      if (!element) return;
+
+      // テンポラリのテキストエリアを作ってコピー
+      const tempTextArea = document.createElement('textarea');
+      tempTextArea.value = element.textContent;
+      document.body.appendChild(tempTextArea);
+      tempTextArea.select();
+      
+      try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+          showToast('コマンドをコピーしました！');
+        } else {
+          showToast('コピーに失敗しました。手動でコピーしてください。');
+        }
+      } catch (err) {
+        showToast('エラーが発生しました。');
+      }
+      
+      document.body.removeChild(tempTextArea);
+    }
+
+    // カスタムトースト通知表示
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      const toastMessage = document.getElementById('toast-message');
+      
+      toastMessage.textContent = message;
+      toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-2');
+      toast.classList.add('opacity-100', 'translate-y-0');
+
+      setTimeout(() => {
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-2');
+      }, 2500);
+    }
+  </script>
+</body>
+</html>
